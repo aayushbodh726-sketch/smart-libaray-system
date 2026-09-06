@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stackline — Campus Library Catalog</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+  :root{
+    --paper:#EFE7D3;
+    --paper-dark:#E4D9BE;
+    --card:#FBF6E9;
+    --forest:#1F3A2E;
+    --forest-dark:#152922;
+    --brass:#B8923F;
+    --ink:#23281F;
+    --rust:#8C4A3B;
+    --sage:#4C7A5D;
+    --line: rgba(35,40,31,0.16);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
+  ::selection{background:var(--brass);color:var(--card);}
+
+  header{
+    background:var(--forest);
+    color:var(--paper);
+    padding:2.6rem 1.5rem 3.4rem;
+    position:relative;
+    overflow:hidden;
+  }
+  header::after{
+    content:"";
+    position:absolute; left:0; right:0; bottom:0; height:10px;
+    background:repeating-linear-gradient(90deg,var(--brass) 0 18px, transparent 18px 26px);
+    opacity:.8;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:.72rem; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--brass); margin:0 0 .6rem;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:700; font-size:clamp(2.1rem,5vw,3.1rem);
+    margin:0 0 .5rem; letter-spacing:-.01em;
+  }
+  header p.tagline{
+    max-width:44ch; color:#D9D3BE; font-size:1rem; line-height:1.5; margin:0 0 1.8rem;
+  }
+
+  .search-wrap{
+    max-width:640px;
+    background:var(--card);
+    border-radius:10px;
+    padding:.4rem;
+    display:flex; gap:.4rem;
+    box-shadow:0 12px 30px rgba(0,0,0,.25);
+  }
+  .search-wrap input{
+    flex:1; border:none; background:transparent; padding:.7rem .8rem;
+    font-family:'Inter'; font-size:.95rem; color:var(--ink); outline:none;
+  }
+  .search-wrap select{
+    border:none; background:var(--paper-dark); border-radius:6px; padding:0 .6rem;
+    font-family:'Inter'; font-size:.85rem; color:var(--ink);
+  }
+
+  main{max-width:1080px; margin:0 auto; padding:2.2rem 1.5rem 4rem;}
+
+  .stats{
+    display:flex; gap:1.2rem; flex-wrap:wrap; margin:-2.1rem 0 2.2rem;
+    position:relative; z-index:2;
+  }
+  .stat{
+    background:var(--card); border:1px solid var(--line); border-radius:8px;
+    padding:.7rem 1.1rem; font-family:'IBM Plex Mono',monospace; font-size:.8rem;
+    box-shadow:0 6px 16px rgba(35,40,31,.08);
+  }
+  .stat b{display:block; font-family:'Fraunces',serif; font-size:1.4rem; font-weight:700;}
+
+  .section-label{
+    font-family:'IBM Plex Mono',monospace; font-size:.75rem; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--forest); border-bottom:1px solid var(--line);
+    padding-bottom:.5rem; margin:0 0 1.3rem; display:flex; justify-content:space-between;
+  }
+
+  /* Bookshelf */
+  .shelf-frame{
+    background:linear-gradient(180deg, transparent 0%, transparent 88%, var(--forest-dark) 88%, var(--forest-dark) 100%);
+    padding-bottom:16px; margin-bottom:2.4rem;
+  }
+  .shelf{
+    display:flex; align-items:flex-end; gap:4px; min-height:210px;
+    padding:0 4px; flex-wrap:wrap; row-gap:14px;
+  }
+  .spine{
+    width:38px; height:190px; border-radius:3px 3px 2px 2px;
+    display:flex; align-items:flex-start; justify-content:center; padding-top:12px;
+    cursor:pointer; position:relative; border:1px solid rgba(0,0,0,.15);
+    box-shadow:inset -4px 0 8px rgba(0,0,0,.12), 0 3px 6px rgba(0,0,0,.15);
+    transition:transform .15s ease, height .15s ease;
+    flex-shrink:0;
+  }
+  .spine:hover{ transform:translateY(-10px); }
+  .spine.out{ opacity:.4; filter:grayscale(.4); }
+  .spine span{
+    writing-mode:vertical-rl; transform:rotate(180deg);
+    font-family:'Fraunces',serif; font-weight:600; font-size:.78rem;
+    color:rgba(255,255,255,.94); text-shadow:0 1px 2px rgba(0,0,0,.25);
+    max-height:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .spine .dot{
+    position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
+    width:7px; height:7px; border-radius:50%;
+  }
+
+  .empty{
+    font-family:'IBM Plex Mono',monospace; color:var(--ink); opacity:.55; font-size:.85rem;
+    padding:2rem 0;
+  }
+
+  /* Catalog card modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(21,25,17,.55);
+    display:none; align-items:center; justify-content:center; padding:1.2rem; z-index:50;
+  }
+  .overlay.show{display:flex;}
+  .card{
+    background:var(--card); width:100%; max-width:420px; border-radius:4px;
+    padding:1.6rem 1.6rem 1.4rem; position:relative;
+    box-shadow:0 30px 60px rgba(0,0,0,.4);
+    background-image: repeating-linear-gradient(180deg, transparent 0 34px, var(--line) 34px 35px);
+    background-position: 0 90px;
+  }
+  .card .close{
+    position:absolute; top:.8rem; right:1rem; border:none; background:none;
+    font-size:1.3rem; cursor:pointer; color:var(--ink); opacity:.5;
+  }
+  .card .call{
+    font-family:'IBM Plex Mono',monospace; font-size:.72rem; color:var(--rust);
+    letter-spacing:.08em; margin-bottom:.5rem;
+  }
+  .card h2{
+    font-family:'Fraunces',serif; font-size:1.5rem; margin:0 0 .15rem; line-height:1.15;
+  }
+  .card .author{ font-size:.88rem; color:var(--ink); opacity:.65; margin-bottom:1rem; }
+  .card .row{ display:flex; justify-content:space-between; font-size:.82rem; padding:.32rem 0; }
+  .card .row b{font-weight:600;}
+  .badge{
+    display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:.7rem;
+    padding:.15rem .5rem; border-radius:3px; letter-spacing:.05em;
+  }
+  .badge.avail{ background:rgba(76,122,93,.15); color:var(--sage); }
+  .badge.out{ background:rgba(140,74,59,.15); color:var(--rust); }
+
+  .stamp{
+    margin-top:1.1rem; border:2px solid var(--rust); color:var(--rust);
+    display:inline-block; padding:.35rem .7rem; font-family:'IBM Plex Mono',monospace;
+    font-size:.75rem; transform:rotate(-4deg); border-radius:3px; opacity:.85;
+  }
+
+  .action-btn{
+    margin-top:1.3rem; width:100%; border:none; padding:.75rem; border-radius:6px;
+    font-family:'Inter'; font-weight:600; font-size:.9rem; cursor:pointer;
+    background:var(--forest); color:var(--paper); transition:background .15s;
+  }
+  .action-btn.return{ background:var(--rust); }
+  .action-btn:hover{ background:var(--forest-dark); }
+
+  footer{
+    text-align:center; padding:1.6rem; font-family:'IBM Plex Mono',monospace;
+    font-size:.72rem; color:var(--ink); opacity:.5;
+  }
+
+  @media (max-width:520px){
+    .spine{ width:32px; height:160px; }
+    .search-wrap{ flex-direction:column; }
+    .search-wrap select{ padding:.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Stackline · Campus Library</p>
+  <h1>Find your next book,<br>not a search headache.</h1>
+  <p class="tagline">Browse the shelf visually or search by title, author, or subject — every spine tells you what's available before you click.</p>
+  <div class="search-wrap">
+    <input id="searchInput" type="text" placeholder="Search title, author, or subject…">
+    <select id="genreFilter"><option value="">All subjects</option></select>
+    <select id="availFilter">
+      <option value="">All copies</option>
+      <option value="avail">Available only</option>
+    </select>
+  </div>
+</header>
+
+<main>
+  <div class="stats" id="stats"></div>
+
+  <div class="section-label"><span id="shelfTitle">The Shelf</span><span id="shelfCount"></span></div>
+  <div class="shelf-frame">
+    <div class="shelf" id="shelf"></div>
+  </div>
+
+  <p class="empty" id="emptyMsg" style="display:none;">No books match that search — try another title, author, or subject.</p>
+</main>
+
+<footer>STACKLINE DEMO — in-browser data, resets on reload · full front-end + back-end source provided separately</footer>
+
+<div class="overlay" id="overlay">
+  <div class="card" id="card"></div>
+</div>
+
+<script>
+const GENRE_COLORS = {
+  "Computer Science": "#3E5C76",
+  "Fiction": "#6B4C6B",
+  "Physics": "#2E6E5E",
+  "History": "#7A5230",
+  "Mathematics": "#455A3B",
+  "Psychology": "#6E4A3F",
+  "Biology": "#3C6E4A",
+  "Economics": "#5C4A7A"
+};
+
+let books = [
+  {id:1, title:"Introduction to Algorithms", author:"Cormen, Leiserson, Rivest", genre:"Computer Science", call:"QA76.6 .I5858", out:false},
+  {id:2, title:"Clean Code", author:"Robert C. Martin", genre:"Computer Science", call:"QA76.76 .C55", out:true, due:"Aug 04"},
+  {id:3, title:"Structure and Interpretation of Computer Programs", author:"Abelson & Sussman", genre:"Computer Science", call:"QA76.6 .A255", out:false},
+  {id:4, title:"Nineteen Eighty-Four", author:"George Orwell", genre:"Fiction", call:"PR6029.R8 N4", out:false},
+  {id:5, title:"One Hundred Years of Solitude", author:"Gabriel García Márquez", genre:"Fiction", call:"PQ8180.17 .A73", out:true, due:"Jul 29"},
+  {id:6, title:"The Brothers Karamazov", author:"Fyodor Dostoevsky", genre:"Fiction", call:"PG3325 .B7", out:false},
+  {id:7, title:"A Brief History of Time", author:"Stephen Hawking", genre:"Physics", call:"QB981 .H377", out:false},
+  {id:8, title:"The Feynman Lectures on Physics", author:"Richard Feynman", genre:"Physics", call:"QC23 .F47", out:false},
+  {id:9, title:"Sapiens", author:"Yuval Noah Harari", genre:"History", call:"CB113.W6 H37", out:true, due:"Aug 01"},
+  {id:10, title:"Guns, Germs, and Steel", author:"Jared Diamond", genre:"History", call:"CC101.U6 D5", out:false},
+  {id:11, title:"Linear Algebra Done Right", author:"Sheldon Axler", genre:"Mathematics", call:"QA184.2 .A94", out:false},
+  {id:12, title:"How to Solve It", author:"George Pólya", genre:"Mathematics", call:"QA11 .P6", out:false},
+  {id:13, title:"Thinking, Fast and Slow", author:"Daniel Kahneman", genre:"Psychology", call:"BF441 .K34", out:false},
+  {id:14, title:"Man's Search for Meaning", author:"Viktor Frankl", genre:"Psychology", call:"BF109.F7 A3", out:true, due:"Jul 31"},
+  {id:15, title:"The Selfish Gene", author:"Richard Dawkins", genre:"Biology", call:"QH375 .D37", out:false},
+  {id:16, title:"Freakonomics", author:"Levitt & Dubner", genre:"Economics", call:"HB74.P8 L48", out:false},
+];
+
+const shelf = document.getElementById('shelf');
+const stats = document.getElementById('stats');
+const genreFilter = document.getElementById('genreFilter');
+const availFilter = document.getElementById('availFilter');
+const searchInput = document.getElementById('searchInput');
+const emptyMsg = document.getElementById('emptyMsg');
+const shelfCount = document.getElementById('shelfCount');
+const overlay = document.getElementById('overlay');
+const card = document.getElementById('card');
+
+[...new Set(books.map(b=>b.genre))].sort().forEach(g=>{
+  const opt = document.createElement('option');
+  opt.value = g; opt.textContent = g;
+  genreFilter.appendChild(opt);
+});
+
+function renderStats(){
+  const total = books.length, avail = books.filter(b=>!b.out).length;
+  stats.innerHTML = `
+    <div class="stat"><b>${total}</b>titles on shelf</div>
+    <div class="stat"><b>${avail}</b>available now</div>
+    <div class="stat"><b>${total-avail}</b>checked out</div>
+  `;
+}
+
+function renderShelf(){
+  const q = searchInput.value.trim().toLowerCase();
+  const g = genreFilter.value;
+  const av = availFilter.value;
+
+  const filtered = books.filter(b=>{
+    const matchesQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) || b.genre.toLowerCase().includes(q);
+    const matchesG = !g || b.genre === g;
+    const matchesAv = !av || !b.out;
+    return matchesQ && matchesG && matchesAv;
+  });
+
+  shelfCount.textContent = `${filtered.length} shown`;
+  shelf.innerHTML = '';
+  emptyMsg.style.display = filtered.length ? 'none' : 'block';
+
+  filtered.forEach(b=>{
+    const el = document.createElement('div');
+    el.className = 'spine' + (b.out ? ' out' : '');
+    const color = GENRE_COLORS[b.genre] || '#555';
+    const height = 150 + (b.title.length % 5) * 10;
+    el.style.background = color;
+    el.style.height = height + 'px';
+    el.innerHTML = `<span>${b.title}</span><div class="dot" style="background:${b.out ? '#8C4A3B' : '#4C7A5D'}"></div>`;
+    el.onclick = () => openCard(b.id);
+    shelf.appendChild(el);
+  });
+}
+
+function openCard(id){
+  const b = books.find(x=>x.id===id);
+  card.innerHTML = `
+    <button class="close" onclick="closeCard()">✕</button>
+    <div class="call">CALL NO. ${b.call}</div>
+    <h2>${b.title}</h2>
+    <div class="author">${b.author}</div>
+    <div class="row"><span>Subject</span><b>${b.genre}</b></div>
+    <div class="row"><span>Status</span><span class="badge ${b.out?'out':'avail'}">${b.out?'CHECKED OUT':'AVAILABLE'}</span></div>
+    ${b.out ? `<div class="stamp">DUE ${b.due}</div>` : ''}
+    <button class="action-btn ${b.out?'return':''}" onclick="toggleOut(${b.id})">${b.out ? 'Mark returned' : 'Borrow this book'}</button>
+  `;
+  overlay.classList.add('show');
+}
+function closeCard(){ overlay.classList.remove('show'); }
+overlay.addEventListener('click', e=>{ if(e.target===overlay) closeCard(); });
+
+function toggleOut(id){
+  const b = books.find(x=>x.id===id);
+  b.out = !b.out;
+  if(b.out){
+    const d = new Date(); d.setDate(d.getDate()+14);
+    b.due = d.toLocaleDateString('en-US',{month:'short', day:'2-digit'});
+  } else { delete b.due; }
+  renderStats(); renderShelf(); openCard(id);
+}
+
+searchInput.addEventListener('input', renderShelf);
+genreFilter.addEventListener('change', renderShelf);
+availFilter.addEventListener('change', renderShelf);
+
+renderStats();
+renderShelf();
+</script>
+</body>
+</html>
