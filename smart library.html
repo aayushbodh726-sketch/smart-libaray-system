@@ -1,337 +1,359 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Stackline — Campus Library Catalog</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap');
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stackline — Smart Campus Library System</title>
+  <meta name="description" content="Interactive campus library management and visual bookshelf catalog system with real-time checkout, circulation tracking, barcode scanner, and floor map." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231F3A2E'><path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/><path d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/></svg>" />
 
-  :root{
-    --paper:#EFE7D3;
-    --paper-dark:#E4D9BE;
-    --card:#FBF6E9;
-    --forest:#1F3A2E;
-    --forest-dark:#152922;
-    --brass:#B8923F;
-    --ink:#23281F;
-    --rust:#8C4A3B;
-    --sage:#4C7A5D;
-    --line: rgba(35,40,31,0.16);
-  }
-  *{box-sizing:border-box;}
-  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
-  ::selection{background:var(--brass);color:var(--card);}
+  <!-- Academic Archival Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  header{
-    background:var(--forest);
-    color:var(--paper);
-    padding:2.6rem 1.5rem 3.4rem;
-    position:relative;
-    overflow:hidden;
-  }
-  header::after{
-    content:"";
-    position:absolute; left:0; right:0; bottom:0; height:10px;
-    background:repeating-linear-gradient(90deg,var(--brass) 0 18px, transparent 18px 26px);
-    opacity:.8;
-  }
-  .eyebrow{
-    font-family:'IBM Plex Mono',monospace;
-    font-size:.72rem; letter-spacing:.18em; text-transform:uppercase;
-    color:var(--brass); margin:0 0 .6rem;
-  }
-  h1{
-    font-family:'Fraunces',serif;
-    font-weight:700; font-size:clamp(2.1rem,5vw,3.1rem);
-    margin:0 0 .5rem; letter-spacing:-.01em;
-  }
-  header p.tagline{
-    max-width:44ch; color:#D9D3BE; font-size:1rem; line-height:1.5; margin:0 0 1.8rem;
-  }
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Fraunces', 'serif'],
+            mono: ['IBM Plex Mono', 'monospace'],
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
 
-  .search-wrap{
-    max-width:640px;
-    background:var(--card);
-    border-radius:10px;
-    padding:.4rem;
-    display:flex; gap:.4rem;
-    box-shadow:0 12px 30px rgba(0,0,0,.25);
-  }
-  .search-wrap input{
-    flex:1; border:none; background:transparent; padding:.7rem .8rem;
-    font-family:'Inter'; font-size:.95rem; color:var(--ink); outline:none;
-  }
-  .search-wrap select{
-    border:none; background:var(--paper-dark); border-radius:6px; padding:0 .6rem;
-    font-family:'Inter'; font-size:.85rem; color:var(--ink);
-  }
+  <!-- React 18, React DOM & Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  main{max-width:1080px; margin:0 auto; padding:2.2rem 1.5rem 4rem;}
-
-  .stats{
-    display:flex; gap:1.2rem; flex-wrap:wrap; margin:-2.1rem 0 2.2rem;
-    position:relative; z-index:2;
-  }
-  .stat{
-    background:var(--card); border:1px solid var(--line); border-radius:8px;
-    padding:.7rem 1.1rem; font-family:'IBM Plex Mono',monospace; font-size:.8rem;
-    box-shadow:0 6px 16px rgba(35,40,31,.08);
-  }
-  .stat b{display:block; font-family:'Fraunces',serif; font-size:1.4rem; font-weight:700;}
-
-  .section-label{
-    font-family:'IBM Plex Mono',monospace; font-size:.75rem; letter-spacing:.14em;
-    text-transform:uppercase; color:var(--forest); border-bottom:1px solid var(--line);
-    padding-bottom:.5rem; margin:0 0 1.3rem; display:flex; justify-content:space-between;
-  }
-
-  /* Bookshelf */
-  .shelf-frame{
-    background:linear-gradient(180deg, transparent 0%, transparent 88%, var(--forest-dark) 88%, var(--forest-dark) 100%);
-    padding-bottom:16px; margin-bottom:2.4rem;
-  }
-  .shelf{
-    display:flex; align-items:flex-end; gap:4px; min-height:210px;
-    padding:0 4px; flex-wrap:wrap; row-gap:14px;
-  }
-  .spine{
-    width:38px; height:190px; border-radius:3px 3px 2px 2px;
-    display:flex; align-items:flex-start; justify-content:center; padding-top:12px;
-    cursor:pointer; position:relative; border:1px solid rgba(0,0,0,.15);
-    box-shadow:inset -4px 0 8px rgba(0,0,0,.12), 0 3px 6px rgba(0,0,0,.15);
-    transition:transform .15s ease, height .15s ease;
-    flex-shrink:0;
-  }
-  .spine:hover{ transform:translateY(-10px); }
-  .spine.out{ opacity:.4; filter:grayscale(.4); }
-  .spine span{
-    writing-mode:vertical-rl; transform:rotate(180deg);
-    font-family:'Fraunces',serif; font-weight:600; font-size:.78rem;
-    color:rgba(255,255,255,.94); text-shadow:0 1px 2px rgba(0,0,0,.25);
-    max-height:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-  }
-  .spine .dot{
-    position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
-    width:7px; height:7px; border-radius:50%;
-  }
-
-  .empty{
-    font-family:'IBM Plex Mono',monospace; color:var(--ink); opacity:.55; font-size:.85rem;
-    padding:2rem 0;
-  }
-
-  /* Catalog card modal */
-  .overlay{
-    position:fixed; inset:0; background:rgba(21,25,17,.55);
-    display:none; align-items:center; justify-content:center; padding:1.2rem; z-index:50;
-  }
-  .overlay.show{display:flex;}
-  .card{
-    background:var(--card); width:100%; max-width:420px; border-radius:4px;
-    padding:1.6rem 1.6rem 1.4rem; position:relative;
-    box-shadow:0 30px 60px rgba(0,0,0,.4);
-    background-image: repeating-linear-gradient(180deg, transparent 0 34px, var(--line) 34px 35px);
-    background-position: 0 90px;
-  }
-  .card .close{
-    position:absolute; top:.8rem; right:1rem; border:none; background:none;
-    font-size:1.3rem; cursor:pointer; color:var(--ink); opacity:.5;
-  }
-  .card .call{
-    font-family:'IBM Plex Mono',monospace; font-size:.72rem; color:var(--rust);
-    letter-spacing:.08em; margin-bottom:.5rem;
-  }
-  .card h2{
-    font-family:'Fraunces',serif; font-size:1.5rem; margin:0 0 .15rem; line-height:1.15;
-  }
-  .card .author{ font-size:.88rem; color:var(--ink); opacity:.65; margin-bottom:1rem; }
-  .card .row{ display:flex; justify-content:space-between; font-size:.82rem; padding:.32rem 0; }
-  .card .row b{font-weight:600;}
-  .badge{
-    display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:.7rem;
-    padding:.15rem .5rem; border-radius:3px; letter-spacing:.05em;
-  }
-  .badge.avail{ background:rgba(76,122,93,.15); color:var(--sage); }
-  .badge.out{ background:rgba(140,74,59,.15); color:var(--rust); }
-
-  .stamp{
-    margin-top:1.1rem; border:2px solid var(--rust); color:var(--rust);
-    display:inline-block; padding:.35rem .7rem; font-family:'IBM Plex Mono',monospace;
-    font-size:.75rem; transform:rotate(-4deg); border-radius:3px; opacity:.85;
-  }
-
-  .action-btn{
-    margin-top:1.3rem; width:100%; border:none; padding:.75rem; border-radius:6px;
-    font-family:'Inter'; font-weight:600; font-size:.9rem; cursor:pointer;
-    background:var(--forest); color:var(--paper); transition:background .15s;
-  }
-  .action-btn.return{ background:var(--rust); }
-  .action-btn:hover{ background:var(--forest-dark); }
-
-  footer{
-    text-align:center; padding:1.6rem; font-family:'IBM Plex Mono',monospace;
-    font-size:.72rem; color:var(--ink); opacity:.5;
-  }
-
-  @media (max-width:520px){
-    .spine{ width:32px; height:160px; }
-    .search-wrap{ flex-direction:column; }
-    .search-wrap select{ padding:.6rem; }
-  }
-</style>
+  <style>
+    body { background-color: #EFE7D3; color: #23281F; font-family: 'Inter', sans-serif; }
+    .font-serif-display { font-family: 'Fraunces', serif; }
+    .font-mono-code { font-family: 'IBM Plex Mono', monospace; }
+    @media print {
+      body * { visibility: hidden; }
+      #printable-receipt, #printable-receipt * { visibility: visible; }
+      #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; }
+    }
+  </style>
 </head>
-<body>
+<body class="antialiased selection:bg-[#B8923F] selection:text-[#FAF5E8]">
+  <div id="root"></div>
 
-<header>
-  <p class="eyebrow">Stackline · Campus Library</p>
-  <h1>Find your next book,<br>not a search headache.</h1>
-  <p class="tagline">Browse the shelf visually or search by title, author, or subject — every spine tells you what's available before you click.</p>
-  <div class="search-wrap">
-    <input id="searchInput" type="text" placeholder="Search title, author, or subject…">
-    <select id="genreFilter"><option value="">All subjects</option></select>
-    <select id="availFilter">
-      <option value="">All copies</option>
-      <option value="avail">Available only</option>
-    </select>
-  </div>
-</header>
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
 
-<main>
-  <div class="stats" id="stats"></div>
+    const GENRE_COLORS = {
+      'Computer Science': '#1D3B53',
+      'Literature': '#8C4A3B',
+      'Fiction': '#7A3E2D',
+      'Mathematics': '#2C4C38',
+      'Physics': '#283B42',
+      'Biology': '#2A5C45',
+      'Economics': '#4A3B2C',
+      'History': '#6A3B22',
+      'Psychology': '#4F2D4F',
+      'Philosophy': '#3D4528',
+    };
 
-  <div class="section-label"><span id="shelfTitle">The Shelf</span><span id="shelfCount"></span></div>
-  <div class="shelf-frame">
-    <div class="shelf" id="shelf"></div>
-  </div>
+    const INITIAL_BOOKS = [
+      { id: 1, title: "Introduction to Algorithms", author: "Thomas H. Cormen", genre: "Computer Science", call: "QA76.6 .C662", isbn: "978-0262033848", year: 2009, pages: 1292, shelfLocation: "Stack 3A · Shelf 2", description: "Comprehensive guide to algorithms covering sorting, graphs, and dynamic programming.", out: false, timesBorrowed: 42 },
+      { id: 2, title: "Clean Code", author: "Robert C. Martin", genre: "Computer Science", call: "QA76.76.C64 M37", isbn: "978-0132350884", year: 2008, pages: 464, shelfLocation: "Stack 3A · Shelf 1", description: "Principles and practices of writing clean, maintainable software.", out: true, borrower: "Elena Rostova", borrowerId: "STU-8821", due: "Oct 12, 2026", timesBorrowed: 38 },
+      { id: 3, title: "Nineteen Eighty-Four", author: "George Orwell", genre: "Fiction", call: "PR6029.R8 N5", isbn: "978-0451524935", year: 1949, pages: 328, shelfLocation: "Stack 1B · Shelf 4", description: "Dystopian fiction exploring state surveillance and doublespeak.", out: false, timesBorrowed: 51 },
+      { id: 4, title: "The Great Gatsby", author: "F. Scott Fitzgerald", genre: "Literature", call: "PS3511.I9 G7", isbn: "978-0743273565", year: 1925, pages: 180, shelfLocation: "Stack 1A · Shelf 1", description: "The classic Jazz Age tragedy of Jay Gatsby and Daisy Buchanan.", out: false, timesBorrowed: 47 },
+      { id: 5, title: "A Brief History of Time", author: "Stephen Hawking", genre: "Physics", call: "QB981 .H377", isbn: "978-0553380163", year: 1988, pages: 212, shelfLocation: "Stack 2B · Shelf 3", description: "Landmark exploration of modern cosmology, black holes, and time.", out: true, borrower: "Julian Chen", borrowerId: "FAC-9012", due: "Oct 15, 2026", timesBorrowed: 39 },
+      { id: 6, title: "Linear Algebra Done Right", author: "Sheldon Axler", genre: "Mathematics", call: "QA184 .A96", isbn: "978-3319110790", year: 2015, pages: 340, shelfLocation: "Stack 2A · Shelf 5", description: "Modern treatment of linear operators on inner product spaces.", out: false, timesBorrowed: 31 },
+      { id: 7, title: "Thinking, Fast and Slow", author: "Daniel Kahneman", genre: "Psychology", call: "BF441 .K238", isbn: "978-0374533557", year: 2011, pages: 499, shelfLocation: "Stack 5A · Shelf 1", description: "Tour of cognitive heuristics separating System 1 from System 2.", out: false, timesBorrowed: 44 },
+      { id: 8, title: "Meditations", author: "Marcus Aurelius", genre: "Philosophy", call: "B580 .A3", isbn: "978-0812968255", year: 180, pages: 254, shelfLocation: "Stack 5B · Shelf 1", description: "Reflections of the Roman Emperor on Stoic virtue and mortality.", out: false, timesBorrowed: 36 }
+    ];
 
-  <p class="empty" id="emptyMsg" style="display:none;">No books match that search — try another title, author, or subject.</p>
-</main>
+    const STACK_ZONES = [
+      { id: 'Stack 3A', floor: 1, name: 'Computing & Algorithms', wing: 'North Tech Wing', genres: ['Computer Science'], callRange: 'QA75 - QA76.9' },
+      { id: 'Stack 1A', floor: 1, name: 'Literature & Classical Drama', wing: 'South Classical Wing', genres: ['Literature'], callRange: 'PN45 - PR120' },
+      { id: 'Stack 1B', floor: 1, name: 'World Fiction', wing: 'South Fiction Wing', genres: ['Fiction'], callRange: 'PR6000 - PZ10' },
+      { id: 'Stack 2A', floor: 2, name: 'Pure Mathematics', wing: 'West Science Gallery', genres: ['Mathematics'], callRange: 'QA1 - QA184' },
+      { id: 'Stack 2B', floor: 2, name: 'Theoretical Physics', wing: 'West Science Gallery', genres: ['Physics'], callRange: 'QB1 - QC99' },
+      { id: 'Stack 5A', floor: 2, name: 'Behavioral Psychology', wing: 'South Philosophy Sanctuary', genres: ['Psychology'], callRange: 'BF1 - BJ1500' },
+      { id: 'Stack 5B', floor: 2, name: 'Moral Philosophy', wing: 'South Philosophy Sanctuary', genres: ['Philosophy'], callRange: 'B1 - BD700' }
+    ];
 
-<footer>STACKLINE DEMO — in-browser data, resets on reload · full front-end + back-end source provided separately</footer>
+    function App() {
+      const [books, setBooks] = useState(() => {
+        try {
+          const saved = localStorage.getItem('stackline_books');
+          if (saved) return JSON.parse(saved);
+        } catch (e) {}
+        return INITIAL_BOOKS;
+      });
 
-<div class="overlay" id="overlay">
-  <div class="card" id="card"></div>
-</div>
+      useEffect(() => {
+        localStorage.setItem('stackline_books', JSON.stringify(books));
+      }, [books]);
 
-<script>
-const GENRE_COLORS = {
-  "Computer Science": "#3E5C76",
-  "Fiction": "#6B4C6B",
-  "Physics": "#2E6E5E",
-  "History": "#7A5230",
-  "Mathematics": "#455A3B",
-  "Psychology": "#6E4A3F",
-  "Biology": "#3C6E4A",
-  "Economics": "#5C4A7A"
-};
+      const [viewMode, setViewMode] = useState('shelf');
+      const [searchQuery, setSearchQuery] = useState('');
+      const [selectedGenre, setSelectedGenre] = useState('');
+      const [inspectingBook, setInspectingBook] = useState(null);
+      const [borrowingBook, setBorrowingBook] = useState(null);
+      const [receiptData, setReceiptData] = useState(null);
 
-let books = [
-  {id:1, title:"Introduction to Algorithms", author:"Cormen, Leiserson, Rivest", genre:"Computer Science", call:"QA76.6 .I5858", out:false},
-  {id:2, title:"Clean Code", author:"Robert C. Martin", genre:"Computer Science", call:"QA76.76 .C55", out:true, due:"Aug 04"},
-  {id:3, title:"Structure and Interpretation of Computer Programs", author:"Abelson & Sussman", genre:"Computer Science", call:"QA76.6 .A255", out:false},
-  {id:4, title:"Nineteen Eighty-Four", author:"George Orwell", genre:"Fiction", call:"PR6029.R8 N4", out:false},
-  {id:5, title:"One Hundred Years of Solitude", author:"Gabriel García Márquez", genre:"Fiction", call:"PQ8180.17 .A73", out:true, due:"Jul 29"},
-  {id:6, title:"The Brothers Karamazov", author:"Fyodor Dostoevsky", genre:"Fiction", call:"PG3325 .B7", out:false},
-  {id:7, title:"A Brief History of Time", author:"Stephen Hawking", genre:"Physics", call:"QB981 .H377", out:false},
-  {id:8, title:"The Feynman Lectures on Physics", author:"Richard Feynman", genre:"Physics", call:"QC23 .F47", out:false},
-  {id:9, title:"Sapiens", author:"Yuval Noah Harari", genre:"History", call:"CB113.W6 H37", out:true, due:"Aug 01"},
-  {id:10, title:"Guns, Germs, and Steel", author:"Jared Diamond", genre:"History", call:"CC101.U6 D5", out:false},
-  {id:11, title:"Linear Algebra Done Right", author:"Sheldon Axler", genre:"Mathematics", call:"QA184.2 .A94", out:false},
-  {id:12, title:"How to Solve It", author:"George Pólya", genre:"Mathematics", call:"QA11 .P6", out:false},
-  {id:13, title:"Thinking, Fast and Slow", author:"Daniel Kahneman", genre:"Psychology", call:"BF441 .K34", out:false},
-  {id:14, title:"Man's Search for Meaning", author:"Viktor Frankl", genre:"Psychology", call:"BF109.F7 A3", out:true, due:"Jul 31"},
-  {id:15, title:"The Selfish Gene", author:"Richard Dawkins", genre:"Biology", call:"QH375 .D37", out:false},
-  {id:16, title:"Freakonomics", author:"Levitt & Dubner", genre:"Economics", call:"HB74.P8 L48", out:false},
-];
+      const filteredBooks = useMemo(() => {
+        const q = searchQuery.toLowerCase().trim();
+        return books.filter(b => {
+          const matchQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) || b.call.toLowerCase().includes(q);
+          const matchG = !selectedGenre || b.genre === selectedGenre;
+          return matchQ && matchG;
+        });
+      }, [books, searchQuery, selectedGenre]);
 
-const shelf = document.getElementById('shelf');
-const stats = document.getElementById('stats');
-const genreFilter = document.getElementById('genreFilter');
-const availFilter = document.getElementById('availFilter');
-const searchInput = document.getElementById('searchInput');
-const emptyMsg = document.getElementById('emptyMsg');
-const shelfCount = document.getElementById('shelfCount');
-const overlay = document.getElementById('overlay');
-const card = document.getElementById('card');
+      const handleConfirmBorrow = (bookId, patronName, patronId, days) => {
+        const d = new Date();
+        d.setDate(d.getDate() + days);
+        const dueText = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
 
-[...new Set(books.map(b=>b.genre))].sort().forEach(g=>{
-  const opt = document.createElement('option');
-  opt.value = g; opt.textContent = g;
-  genreFilter.appendChild(opt);
-});
+        setBooks(prev => prev.map(b => b.id === bookId ? { ...b, out: true, borrower: patronName, borrowerId: patronId, due: dueText } : b));
+        const target = books.find(b => b.id === bookId);
+        setBorrowingBook(null);
+        if (target) {
+          setReceiptData({ book: { ...target, out: true, borrower: patronName, due: dueText }, patronName, patronId });
+        }
+      };
 
-function renderStats(){
-  const total = books.length, avail = books.filter(b=>!b.out).length;
-  stats.innerHTML = `
-    <div class="stat"><b>${total}</b>titles on shelf</div>
-    <div class="stat"><b>${avail}</b>available now</div>
-    <div class="stat"><b>${total-avail}</b>checked out</div>
-  `;
-}
+      const handleReturnBook = (bookId) => {
+        setBooks(prev => prev.map(b => b.id === bookId ? { ...b, out: false, borrower: undefined, due: undefined } : b));
+        setInspectingBook(null);
+      };
 
-function renderShelf(){
-  const q = searchInput.value.trim().toLowerCase();
-  const g = genreFilter.value;
-  const av = availFilter.value;
+      return (
+        <div className="min-h-screen flex flex-col bg-[#EFE7D3]">
+          {/* HEADER */}
+          <header className="bg-[#1F3A2E] text-[#EFE7D3] pt-6 pb-8 px-4 sm:px-8 border-b-4 border-[#B8923F] shadow-lg">
+            <div className="max-w-6xl mx-auto space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EFE7D3]/15 pb-4">
+                <div className="flex items-center gap-2 text-xs font-mono-code text-[#B8923F]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#B8923F] animate-pulse"></span>
+                  <span>Stackline Campus Library System · St. Jude Archival Stacks</span>
+                </div>
+                <div className="flex gap-2">
+                  {['shelf', 'grid', 'circulation', 'map'].map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setViewMode(mode)}
+                      className={`px-3 py-1.5 rounded font-mono-code text-xs capitalize ${viewMode === mode ? 'bg-[#B8923F] text-[#152922] font-bold' : 'bg-[#152922] text-[#EFE7D3]/80'}`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-  const filtered = books.filter(b=>{
-    const matchesQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) || b.genre.toLowerCase().includes(q);
-    const matchesG = !g || b.genre === g;
-    const matchesAv = !av || !b.out;
-    return matchesQ && matchesG && matchesAv;
-  });
+              <div className="flex flex-col sm:flex-row justify-between gap-4">
+                <div>
+                  <h1 className="font-serif-display font-bold text-3xl sm:text-4xl text-[#FAF5E8]">Campus Library Stacks</h1>
+                  <p className="font-mono-code text-xs text-[#EFE7D3]/70 mt-1">Visual Circulation Desk & Interactive Stacks</p>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Search books, authors, call numbers..."
+                    className="px-3 py-1.5 bg-[#152922] text-[#FAF5E8] rounded text-xs border border-white/20 w-64"
+                  />
+                  <select
+                    value={selectedGenre}
+                    onChange={e => setSelectedGenre(e.target.value)}
+                    className="px-2 py-1.5 bg-[#152922] text-[#FAF5E8] rounded text-xs border border-white/20"
+                  >
+                    <option value="">All Subjects</option>
+                    {Object.keys(GENRE_COLORS).map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </header>
 
-  shelfCount.textContent = `${filtered.length} shown`;
-  shelf.innerHTML = '';
-  emptyMsg.style.display = filtered.length ? 'none' : 'block';
+          {/* MAIN VIEW */}
+          <main className="max-w-6xl w-full mx-auto p-4 sm:p-8 flex-1">
+            {/* VIEW 1: OPEN SHELF */}
+            {viewMode === 'shelf' && (
+              <div className="bg-[#5C3A1E] border-4 border-[#3D2614] rounded-xl p-6 sm:p-8 shadow-2xl">
+                <div className="flex items-end gap-2 sm:gap-3 overflow-x-auto pb-4 pt-12 px-4 border-b-8 border-[#3D2614] bg-[#2E1A0D]/50 rounded-lg min-h-[300px]">
+                  {filteredBooks.map(book => (
+                    <div
+                      key={book.id}
+                      onClick={() => setInspectingBook(book)}
+                      style={{ height: `${Math.min(260, Math.max(180, (book.pages || 300)/4 + 130))}px`, backgroundColor: GENRE_COLORS[book.genre] || '#2C4C38' }}
+                      className="shrink-0 w-12 sm:w-14 rounded-t shadow-xl cursor-pointer hover:-translate-y-3 transition-transform flex flex-col justify-between p-1.5 border-r border-black/30"
+                    >
+                      <div className="w-full h-1 bg-[#B8923F]" />
+                      <div className="font-serif-display text-[11px] text-[#FAF5E8] font-bold transform -rotate-90 whitespace-nowrap overflow-hidden truncate">
+                        {book.title}
+                      </div>
+                      <div className={`w-2 h-2 rounded-full mx-auto ${book.out ? 'bg-red-400' : 'bg-emerald-400'}`} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-  filtered.forEach(b=>{
-    const el = document.createElement('div');
-    el.className = 'spine' + (b.out ? ' out' : '');
-    const color = GENRE_COLORS[b.genre] || '#555';
-    const height = 150 + (b.title.length % 5) * 10;
-    el.style.background = color;
-    el.style.height = height + 'px';
-    el.innerHTML = `<span>${b.title}</span><div class="dot" style="background:${b.out ? '#8C4A3B' : '#4C7A5D'}"></div>`;
-    el.onclick = () => openCard(b.id);
-    shelf.appendChild(el);
-  });
-}
+            {/* VIEW 2: GRID */}
+            {viewMode === 'grid' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredBooks.map(book => (
+                  <div key={book.id} onClick={() => setInspectingBook(book)} className="bg-[#FAF5E8] border border-[#23281F]/15 rounded-xl p-5 shadow-sm hover:border-[#B8923F] cursor-pointer">
+                    <div className="flex justify-between items-start text-xs font-mono-code mb-2">
+                      <span className="font-bold text-[#8C4A3B]">{book.call}</span>
+                      <span className={`px-2 py-0.5 rounded font-bold ${book.out ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}`}>
+                        {book.out ? 'CHECKED OUT' : 'AVAILABLE'}
+                      </span>
+                    </div>
+                    <h3 className="font-serif-display font-bold text-lg text-[#1F3A2E]">{book.title}</h3>
+                    <p className="text-xs text-[#23281F]/70 mt-1">by {book.author}</p>
+                    <p className="text-xs text-[#23281F]/80 mt-2 italic font-serif">"{book.description}"</p>
+                  </div>
+                ))}
+              </div>
+            )}
 
-function openCard(id){
-  const b = books.find(x=>x.id===id);
-  card.innerHTML = `
-    <button class="close" onclick="closeCard()">✕</button>
-    <div class="call">CALL NO. ${b.call}</div>
-    <h2>${b.title}</h2>
-    <div class="author">${b.author}</div>
-    <div class="row"><span>Subject</span><b>${b.genre}</b></div>
-    <div class="row"><span>Status</span><span class="badge ${b.out?'out':'avail'}">${b.out?'CHECKED OUT':'AVAILABLE'}</span></div>
-    ${b.out ? `<div class="stamp">DUE ${b.due}</div>` : ''}
-    <button class="action-btn ${b.out?'return':''}" onclick="toggleOut(${b.id})">${b.out ? 'Mark returned' : 'Borrow this book'}</button>
-  `;
-  overlay.classList.add('show');
-}
-function closeCard(){ overlay.classList.remove('show'); }
-overlay.addEventListener('click', e=>{ if(e.target===overlay) closeCard(); });
+            {/* VIEW 3: CIRCULATION */}
+            {viewMode === 'circulation' && (
+              <div className="bg-[#FAF5E8] border border-[#23281F]/15 rounded-xl p-6 shadow-sm overflow-x-auto">
+                <table className="w-full text-left text-xs font-mono-code">
+                  <thead>
+                    <tr className="border-b-2 border-[#23281F]/20 text-[#23281F]/60">
+                      <th className="py-2">TITLE</th>
+                      <th className="py-2">PATRON</th>
+                      <th className="py-2">DUE DATE</th>
+                      <th className="py-2 text-right">ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {books.map(b => (
+                      <tr key={b.id} className="border-b border-[#23281F]/10">
+                        <td className="py-3 font-bold">{b.title}</td>
+                        <td className="py-3">{b.borrower || '—'}</td>
+                        <td className="py-3">{b.due || 'On Shelf'}</td>
+                        <td className="py-3 text-right">
+                          {b.out ? (
+                            <button onClick={() => handleReturnBook(b.id)} className="px-2.5 py-1 bg-[#8C4A3B] text-white rounded font-bold">Check In</button>
+                          ) : (
+                            <button onClick={() => setBorrowingBook(b)} className="px-2.5 py-1 bg-[#1F3A2E] text-white rounded font-bold">Check Out</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
-function toggleOut(id){
-  const b = books.find(x=>x.id===id);
-  b.out = !b.out;
-  if(b.out){
-    const d = new Date(); d.setDate(d.getDate()+14);
-    b.due = d.toLocaleDateString('en-US',{month:'short', day:'2-digit'});
-  } else { delete b.due; }
-  renderStats(); renderShelf(); openCard(id);
-}
+            {/* VIEW 4: FLOOR MAP */}
+            {viewMode === 'map' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {STACK_ZONES.map(z => (
+                  <div key={z.id} className="bg-[#FAF5E8] border border-[#23281F]/20 p-4 rounded-xl">
+                    <div className="flex justify-between text-xs font-mono-code font-bold">
+                      <span className="text-[#8C4A3B]">{z.id}</span>
+                      <span>Level {z.floor} · {z.wing}</span>
+                    </div>
+                    <h4 className="font-serif-display font-bold text-base mt-1 text-[#1F3A2E]">{z.name}</h4>
+                    <p className="text-xs font-mono-code text-[#23281F]/60 mt-1">LC {z.callRange} · {z.genres.join(', ')}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </main>
 
-searchInput.addEventListener('input', renderShelf);
-genreFilter.addEventListener('change', renderShelf);
-availFilter.addEventListener('change', renderShelf);
+          {/* MODAL: DETAIL */}
+          {inspectingBook && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+              <div className="bg-[#FAF5E8] border-2 border-[#B8923F] rounded-xl max-w-lg w-full p-6 shadow-2xl relative">
+                <button onClick={() => setInspectingBook(null)} className="absolute top-4 right-4 text-lg font-bold">✕</button>
+                <div className="font-mono-code text-xs text-[#8C4A3B] font-bold">{inspectingBook.call}</div>
+                <h3 className="font-serif-display font-bold text-2xl text-[#1F3A2E] mt-1">{inspectingBook.title}</h3>
+                <p className="text-sm text-[#23281F]/70">by {inspectingBook.author} · {inspectingBook.genre}</p>
+                <div className="my-3 p-3 bg-white rounded text-xs font-mono-code">
+                  <div>Shelf Location: <span className="font-bold">{inspectingBook.shelfLocation}</span></div>
+                  <div>ISBN: <span className="font-bold">{inspectingBook.isbn}</span></div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  {inspectingBook.out ? (
+                    <button onClick={() => handleReturnBook(inspectingBook.id)} className="flex-1 py-2 bg-[#8C4A3B] text-white rounded font-bold text-xs uppercase">Check In / Return</button>
+                  ) : (
+                    <button onClick={() => { const b = inspectingBook; setInspectingBook(null); setBorrowingBook(b); }} className="flex-1 py-2 bg-[#1F3A2E] text-white rounded font-bold text-xs uppercase">Issue Loan / Check Out</button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
-renderStats();
-renderShelf();
-</script>
+          {/* MODAL: CHECKOUT */}
+          {borrowingBook && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+              <div className="bg-[#FAF5E8] border-2 border-[#B8923F] rounded-xl max-w-md w-full p-6 shadow-2xl">
+                <h3 className="font-serif-display font-bold text-xl text-[#1F3A2E]">Issue Circulation Loan</h3>
+                <p className="text-xs font-mono-code text-[#23281F]/70">{borrowingBook.title}</p>
+                <form onSubmit={e => {
+                  e.preventDefault();
+                  handleConfirmBorrow(borrowingBook.id, e.target.patronName.value, e.target.patronId.value, parseInt(e.target.days.value, 10));
+                }} className="mt-4 space-y-3 font-mono-code text-xs">
+                  <div>
+                    <label className="block mb-1">Patron Name:</label>
+                    <input name="patronName" defaultValue="Campus Scholar" required className="w-full p-2 border rounded" />
+                  </div>
+                  <div>
+                    <label className="block mb-1">Patron ID:</label>
+                    <input name="patronId" defaultValue="STU-2026" required className="w-full p-2 border rounded" />
+                  </div>
+                  <div>
+                    <label className="block mb-1">Loan Period:</label>
+                    <select name="days" defaultValue="14" className="w-full p-2 border rounded">
+                      <option value="7">7 Days</option>
+                      <option value="14">14 Days</option>
+                      <option value="28">28 Days</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button type="submit" className="flex-1 py-2 bg-[#1F3A2E] text-white font-bold rounded">Authorize Loan</button>
+                    <button type="button" onClick={() => setBorrowingBook(null)} className="px-4 py-2 border rounded">Cancel</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL: PRINTABLE DUE SLIP */}
+          {receiptData && (
+            <div id="printable-receipt" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+              <div className="bg-[#FAF5E8] border rounded-xl max-w-xs w-full p-6 font-mono-code text-xs text-[#23281F] text-center">
+                <div className="font-bold text-sm text-[#1F3A2E]">STACKLINE LIBRARY</div>
+                <div className="text-[10px] text-[#23281F]/60">Circulation Due Slip</div>
+                <div className="my-3 py-2 border-y border-dashed text-left space-y-1">
+                  <div><b>BOOK:</b> {receiptData.book.title}</div>
+                  <div><b>CALL:</b> {receiptData.book.call}</div>
+                  <div><b>PATRON:</b> {receiptData.patronName}</div>
+                  <div><b>DUE DATE:</b> {receiptData.book.due}</div>
+                </div>
+                <div className="flex gap-2 print:hidden mt-3">
+                  <button onClick={() => window.print()} className="flex-1 py-1.5 bg-[#1F3A2E] text-white font-bold rounded">Print Slip</button>
+                  <button onClick={() => setReceiptData(null)} className="px-3 py-1.5 border rounded">Done</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
 </body>
 </html>
