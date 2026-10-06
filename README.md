@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stackline — Smart Campus Library System</title>
+  <meta name="description" content="Interactive campus library management and visual bookshelf catalog system with real-time checkout, circulation tracking, barcode scanner, and floor map." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231F3A2E'><path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/><path d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/></svg>" />
+
+  <!-- Academic Archival Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Fraunces', 'serif'],
+            mono: ['IBM Plex Mono', 'monospace'],
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18, React DOM & Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body { background-color: #EFE7D3; color: #23281F; font-family: 'Inter', sans-serif; }
+    .font-serif-display { font-family: 'Fraunces', serif; }
+    .font-mono-code { font-family: 'IBM Plex Mono', monospace; }
+    @media print {
+      body * { visibility: hidden; }
+      #printable-receipt, #printable-receipt * { visibility: visible; }
+      #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; }
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-[#B8923F] selection:text-[#FAF5E8]">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    const GENRE_COLORS = {
+      'Computer Science': '#1D3B53',
+      'Literature': '#8C4A3B',
+      'Fiction': '#7A3E2D',
+      'Mathematics': '#2C4C38',
+      'Physics': '#283B42',
+      'Biology': '#2A5C45',
+      'Economics': '#4A3B2C',
+      'History': '#6A3B22',
+      'Psychology': '#4F2D4F',
+      'Philosophy': '#3D4528',
+    };
+
+    const INITIAL_BOOKS = [
+      { id: 1, title: "Introduction to Algorithms", author: "Thomas H. Cormen", genre: "Computer Science", call: "QA76.6 .C662", isbn: "978-0262033848", year: 2009, pages: 1292, shelfLocation: "Stack 3A · Shelf 2", description: "Comprehensive guide to algorithms covering sorting, graphs, and dynamic programming.", out: false, timesBorrowed: 42 },
+      { id: 2, title: "Clean Code", author: "Robert C. Martin", genre: "Computer Science", call: "QA76.76.C64 M37", isbn: "978-0132350884", year: 2008, pages: 464, shelfLocation: "Stack 3A · Shelf 1", description: "Principles and practices of writing clean, maintainable software.", out: true, borrower: "Elena Rostova", borrowerId: "STU-8821", due: "Oct 12, 2026", timesBorrowed: 38 },
+      { id: 3, title: "Nineteen Eighty-Four", author: "George Orwell", genre: "Fiction", call: "PR6029.R8 N5", isbn: "978-0451524935", year: 1949, pages: 328, shelfLocation: "Stack 1B · Shelf 4", description: "Dystopian fiction exploring state surveillance and doublespeak.", out: false, timesBorrowed: 51 },
+      { id: 4, title: "The Great Gatsby", author: "F. Scott Fitzgerald", genre: "Literature", call: "PS3511.I9 G7", isbn: "978-0743273565", year: 1925, pages: 180, shelfLocation: "Stack 1A · Shelf 1", description: "The classic Jazz Age tragedy of Jay Gatsby and Daisy Buchanan.", out: false, timesBorrowed: 47 },
+      { id: 5, title: "A Brief History of Time", author: "Stephen Hawking", genre: "Physics", call: "QB981 .H377", isbn: "978-0553380163", year: 1988, pages: 212, shelfLocation: "Stack 2B · Shelf 3", description: "Landmark exploration of modern cosmology, black holes, and time.", out: true, borrower: "Julian Chen", borrowerId: "FAC-9012", due: "Oct 15, 2026", timesBorrowed: 39 },
+      { id: 6, title: "Linear Algebra Done Right", author: "Sheldon Axler", genre: "Mathematics", call: "QA184 .A96", isbn: "978-3319110790", year: 2015, pages: 340, shelfLocation: "Stack 2A · Shelf 5", description: "Modern treatment of linear operators on inner product spaces.", out: false, timesBorrowed: 31 },
+      { id: 7, title: "Thinking, Fast and Slow", author: "Daniel Kahneman", genre: "Psychology", call: "BF441 .K238", isbn: "978-0374533557", year: 2011, pages: 499, shelfLocation: "Stack 5A · Shelf 1", description: "Tour of cognitive heuristics separating System 1 from System 2.", out: false, timesBorrowed: 44 },
+      { id: 8, title: "Meditations", author: "Marcus Aurelius", genre: "Philosophy", call: "B580 .A3", isbn: "978-0812968255", year: 180, pages: 254, shelfLocation: "Stack 5B · Shelf 1", description: "Reflections of the Roman Emperor on Stoic virtue and mortality.", out: false, timesBorrowed: 36 }
+    ];
+
+    const STACK_ZONES = [
+      { id: 'Stack 3A', floor: 1, name: 'Computing & Algorithms', wing: 'North Tech Wing', genres: ['Computer Science'], callRange: 'QA75 - QA76.9' },
+      { id: 'Stack 1A', floor: 1, name: 'Literature & Classical Drama', wing: 'South Classical Wing', genres: ['Literature'], callRange: 'PN45 - PR120' },
+      { id: 'Stack 1B', floor: 1, name: 'World Fiction', wing: 'South Fiction Wing', genres: ['Fiction'], callRange: 'PR6000 - PZ10' },
+      { id: 'Stack 2A', floor: 2, name: 'Pure Mathematics', wing: 'West Science Gallery', genres: ['Mathematics'], callRange: 'QA1 - QA184' },
+      { id: 'Stack 2B', floor: 2, name: 'Theoretical Physics', wing: 'West Science Gallery', genres: ['Physics'], callRange: 'QB1 - QC99' },
+      { id: 'Stack 5A', floor: 2, name: 'Behavioral Psychology', wing: 'South Philosophy Sanctuary', genres: ['Psychology'], callRange: 'BF1 - BJ1500' },
+      { id: 'Stack 5B', floor: 2, name: 'Moral Philosophy', wing: 'South Philosophy Sanctuary', genres: ['Philosophy'], callRange: 'B1 - BD700' }
+    ];
+
+    function App() {
+      const [books, setBooks] = useState(() => {
+        try {
+          const saved = localStorage.getItem('stackline_books');
+          if (saved) return JSON.parse(saved);
+        } catch (e) {}
+        return INITIAL_BOOKS;
+      });
+
+      useEffect(() => {
+        localStorage.setItem('stackline_books', JSON.stringify(books));
+      }, [books]);
+
+      const [viewMode, setViewMode] = useState('shelf');
+      const [searchQuery, setSearchQuery] = useState('');
+      const [selectedGenre, setSelectedGenre] = useState('');
+      const [inspectingBook, setInspectingBook] = useState(null);
+      const [borrowingBook, setBorrowingBook] = useState(null);
+      const [receiptData, setReceiptData] = useState(null);
+
+      const filteredBooks = useMemo(() => {
+        const q = searchQuery.toLowerCase().trim();
+        return books.filter(b => {
+          const matchQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) || b.call.toLowerCase().includes(q);
+          const matchG = !selectedGenre || b.genre === selectedGenre;
+          return matchQ && matchG;
+        });
+      }, [books, searchQuery, selectedGenre]);
+
+      const handleConfirmBorrow = (bookId, patronName, patronId, days) => {
+        const d = new Date();
+        d.setDate(d.getDate() + days);
+        const dueText = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+
+        setBooks(prev => prev.map(b => b.id === bookId ? { ...b, out: true, borrower: patronName, borrowerId: patronId, due: dueText } : b));
+        const target = books.find(b => b.id === bookId);
+        setBorrowingBook(null);
+        if (target) {
+          setReceiptData({ book: { ...target, out: true, borrower: patronName, due: dueText }, patronName, patronId });
+        }
+      };
+
+      const handleReturnBook = (bookId) => {
+        setBooks(prev => prev.map(b => b.id === bookId ? { ...b, out: false, borrower: undefined, due: undefined } : b));
+        setInspectingBook(null);
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col bg-[#EFE7D3]">
+          {/* HEADER */}
+          <header className="bg-[#1F3A2E] text-[#EFE7D3] pt-6 pb-8 px-4 sm:px-8 border-b-4 border-[#B8923F] shadow-lg">
+            <div className="max-w-6xl mx-auto space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EFE7D3]/15 pb-4">
+                <div className="flex items-center gap-2 text-xs font-mono-code text-[#B8923F]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#B8923F] animate-pulse"></span>
+                  <span>Stackline Campus Library System · St. Jude Archival Stacks</span>
+                </div>
+                <div className="flex gap-2">
+                  {['shelf', 'grid', 'circulation', 'map'].map(mode => (
+                    <button
+                      key={mode}
+                      onClick={() => setViewMode(mode)}
+                      className={`px-3 py-1.5 rounded font-mono-code text-xs capitalize ${viewMode === mode ? 'bg-[#B8923F] text-[#152922] font-bold' : 'bg-[#152922] text-[#EFE7D3]/80'}`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row justify-between gap-4">
+                <div>
+                  <h1 className="font-serif-display font-bold text-3xl sm:text-4xl text-[#FAF5E8]">Campus Library Stacks</h1>
+                  <p className="font-mono-code text-xs text-[#EFE7D3]/70 mt-1">Visual Circulation Desk & Interactive Stacks</p>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Search books, authors, call numbers..."
+                    className="px-3 py-1.5 bg-[#152922] text-[#FAF5E8] rounded text-xs border border-white/20 w-64"
+                  />
+                  <select
+                    value={selectedGenre}
+                    onChange={e => setSelectedGenre(e.target.value)}
+                    className="px-2 py-1.5 bg-[#152922] text-[#FAF5E8] rounded text-xs border border-white/20"
+                  >
+                    <option value="">All Subjects</option>
+                    {Object.keys(GENRE_COLORS).map(g => <option key={g} value={g}>{g}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* MAIN VIEW */}
+          <main className="max-w-6xl w-full mx-auto p-4 sm:p-8 flex-1">
+            {/* VIEW 1: OPEN SHELF */}
+            {viewMode === 'shelf' && (
+              <div className="bg-[#5C3A1E] border-4 border-[#3D2614] rounded-xl p-6 sm:p-8 shadow-2xl">
+                <div className="flex items-end gap-2 sm:gap-3 overflow-x-auto pb-4 pt-12 px-4 border-b-8 border-[#3D2614] bg-[#2E1A0D]/50 rounded-lg min-h-[300px]">
+                  {filteredBooks.map(book => (
+                    <div
+                      key={book.id}
+                      onClick={() => setInspectingBook(book)}
+                      style={{ height: `${Math.min(260, Math.max(180, (book.pages || 300)/4 + 130))}px`, backgroundColor: GENRE_COLORS[book.genre] || '#2C4C38' }}
+                      className="shrink-0 w-12 sm:w-14 rounded-t shadow-xl cursor-pointer hover:-translate-y-3 transition-transform flex flex-col justify-between p-1.5 border-r border-black/30"
+                    >
+                      <div className="w-full h-1 bg-[#B8923F]" />
+                      <div className="font-serif-display text-[11px] text-[#FAF5E8] font-bold transform -rotate-90 whitespace-nowrap overflow-hidden truncate">
+                        {book.title}
+                      </div>
+                      <div className={`w-2 h-2 rounded-full mx-auto ${book.out ? 'bg-red-400' : 'bg-emerald-400'}`} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 2: GRID */}
+            {viewMode === 'grid' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredBooks.map(book => (
+                  <div key={book.id} onClick={() => setInspectingBook(book)} className="bg-[#FAF5E8] border border-[#23281F]/15 rounded-xl p-5 shadow-sm hover:border-[#B8923F] cursor-pointer">
+                    <div className="flex justify-between items-start text-xs font-mono-code mb-2">
+                      <span className="font-bold text-[#8C4A3B]">{book.call}</span>
+                      <span className={`px-2 py-0.5 rounded font-bold ${book.out ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-800'}`}>
+                        {book.out ? 'CHECKED OUT' : 'AVAILABLE'}
+                      </span>
+                    </div>
+                    <h3 className="font-serif-display font-bold text-lg text-[#1F3A2E]">{book.title}</h3>
+                    <p className="text-xs text-[#23281F]/70 mt-1">by {book.author}</p>
+                    <p className="text-xs text-[#23281F]/80 mt-2 italic font-serif">"{book.description}"</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* VIEW 3: CIRCULATION */}
+            {viewMode === 'circulation' && (
+              <div className="bg-[#FAF5E8] border border-[#23281F]/15 rounded-xl p-6 shadow-sm overflow-x-auto">
+                <table className="w-full text-left text-xs font-mono-code">
+                  <thead>
+                    <tr className="border-b-2 border-[#23281F]/20 text-[#23281F]/60">
+                      <th className="py-2">TITLE</th>
+                      <th className="py-2">PATRON</th>
+                      <th className="py-2">DUE DATE</th>
+                      <th className="py-2 text-right">ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {books.map(b => (
+                      <tr key={b.id} className="border-b border-[#23281F]/10">
+                        <td className="py-3 font-bold">{b.title}</td>
+                        <td className="py-3">{b.borrower || '—'}</td>
+                        <td className="py-3">{b.due || 'On Shelf'}</td>
+                        <td className="py-3 text-right">
+                          {b.out ? (
+                            <button onClick={() => handleReturnBook(b.id)} className="px-2.5 py-1 bg-[#8C4A3B] text-white rounded font-bold">Check In</button>
+                          ) : (
+                            <button onClick={() => setBorrowingBook(b)} className="px-2.5 py-1 bg-[#1F3A2E] text-white rounded font-bold">Check Out</button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* VIEW 4: FLOOR MAP */}
+            {viewMode === 'map' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {STACK_ZONES.map(z => (
+                  <div key={z.id} className="bg-[#FAF5E8] border border-[#23281F]/20 p-4 rounded-xl">
+                    <div className="flex justify-between text-xs font-mono-code font-bold">
+                      <span className="text-[#8C4A3B]">{z.id}</span>
+                      <span>Level {z.floor} · {z.wing}</span>
+                    </div>
+                    <h4 className="font-serif-display font-bold text-base mt-1 text-[#1F3A2E]">{z.name}</h4>
+                    <p className="text-xs font-mono-code text-[#23281F]/60 mt-1">LC {z.callRange} · {z.genres.join(', ')}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </main>
+
+          {/* MODAL: DETAIL */}
+          {inspectingBook && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+              <div className="bg-[#FAF5E8] border-2 border-[#B8923F] rounded-xl max-w-lg w-full p-6 shadow-2xl relative">
+                <button onClick={() => setInspectingBook(null)} className="absolute top-4 right-4 text-lg font-bold">✕</button>
+                <div className="font-mono-code text-xs text-[#8C4A3B] font-bold">{inspectingBook.call}</div>
+                <h3 className="font-serif-display font-bold text-2xl text-[#1F3A2E] mt-1">{inspectingBook.title}</h3>
+                <p className="text-sm text-[#23281F]/70">by {inspectingBook.author} · {inspectingBook.genre}</p>
+                <div className="my-3 p-3 bg-white rounded text-xs font-mono-code">
+                  <div>Shelf Location: <span className="font-bold">{inspectingBook.shelfLocation}</span></div>
+                  <div>ISBN: <span className="font-bold">{inspectingBook.isbn}</span></div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  {inspectingBook.out ? (
+                    <button onClick={() => handleReturnBook(inspectingBook.id)} className="flex-1 py-2 bg-[#8C4A3B] text-white rounded font-bold text-xs uppercase">Check In / Return</button>
+                  ) : (
+                    <button onClick={() => { const b = inspectingBook; setInspectingBook(null); setBorrowingBook(b); }} className="flex-1 py-2 bg-[#1F3A2E] text-white rounded font-bold text-xs uppercase">Issue Loan / Check Out</button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL: CHECKOUT */}
+          {borrowingBook && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+              <div className="bg-[#FAF5E8] border-2 border-[#B8923F] rounded-xl max-w-md w-full p-6 shadow-2xl">
+                <h3 className="font-serif-display font-bold text-xl text-[#1F3A2E]">Issue Circulation Loan</h3>
+                <p className="text-xs font-mono-code text-[#23281F]/70">{borrowingBook.title}</p>
+                <form onSubmit={e => {
+                  e.preventDefault();
+                  handleConfirmBorrow(borrowingBook.id, e.target.patronName.value, e.target.patronId.value, parseInt(e.target.days.value, 10));
+                }} className="mt-4 space-y-3 font-mono-code text-xs">
+                  <div>
+                    <label className="block mb-1">Patron Name:</label>
+                    <input name="patronName" defaultValue="Campus Scholar" required className="w-full p-2 border rounded" />
+                  </div>
+                  <div>
+                    <label className="block mb-1">Patron ID:</label>
+                    <input name="patronId" defaultValue="STU-2026" required className="w-full p-2 border rounded" />
+                  </div>
+                  <div>
+                    <label className="block mb-1">Loan Period:</label>
+                    <select name="days" defaultValue="14" className="w-full p-2 border rounded">
+                      <option value="7">7 Days</option>
+                      <option value="14">14 Days</option>
+                      <option value="28">28 Days</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button type="submit" className="flex-1 py-2 bg-[#1F3A2E] text-white font-bold rounded">Authorize Loan</button>
+                    <button type="button" onClick={() => setBorrowingBook(null)} className="px-4 py-2 border rounded">Cancel</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* MODAL: PRINTABLE DUE SLIP */}
+          {receiptData && (
+            <div id="printable-receipt" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+              <div className="bg-[#FAF5E8] border rounded-xl max-w-xs w-full p-6 font-mono-code text-xs text-[#23281F] text-center">
+                <div className="font-bold text-sm text-[#1F3A2E]">STACKLINE LIBRARY</div>
+                <div className="text-[10px] text-[#23281F]/60">Circulation Due Slip</div>
+                <div className="my-3 py-2 border-y border-dashed text-left space-y-1">
+                  <div><b>BOOK:</b> {receiptData.book.title}</div>
+                  <div><b>CALL:</b> {receiptData.book.call}</div>
+                  <div><b>PATRON:</b> {receiptData.patronName}</div>
+                  <div><b>DUE DATE:</b> {receiptData.book.due}</div>
+                </div>
+                <div className="flex gap-2 print:hidden mt-3">
+                  <button onClick={() => window.print()} className="flex-1 py-1.5 bg-[#1F3A2E] text-white font-bold rounded">Print Slip</button>
+                  <button onClick={() => setReceiptData(null)} className="px-3 py-1.5 border rounded">Done</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
