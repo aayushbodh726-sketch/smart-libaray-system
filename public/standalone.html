@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stackline — Smart Campus Library System (Standalone Single File)</title>
-  <meta name="description" content="Interactive campus library management and visual bookshelf catalog system with real-time checkout, circulation tracking, overdue monitoring, optical barcode scanner, and building floor plan." />
+  <title>Stackline — Smart Campus Library System</title>
+  <meta name="description" content="Interactive campus library management and visual bookshelf catalog system with real-time checkout, circulation tracking, barcode scanner, and building floor plan." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231F3A2E'><path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/><path d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/></svg>" />
 
   <!-- Academic Archival Fonts -->
@@ -22,16 +22,6 @@
             serif: ['Fraunces', 'serif'],
             mono: ['IBM Plex Mono', 'monospace'],
             sans: ['Inter', 'sans-serif'],
-          },
-          colors: {
-            brand: {
-              green: '#1F3A2E',
-              darkgreen: '#152922',
-              cream: '#EFE7D3',
-              gold: '#B8923F',
-              rust: '#8C4A3B',
-              oak: '#6E4823',
-            }
           }
         }
       }
@@ -49,43 +39,27 @@
       color: #23281F;
       font-family: 'Inter', sans-serif;
     }
-    .font-serif-display {
-      font-family: 'Fraunces', serif;
-    }
-    .font-mono-code {
-      font-family: 'IBM Plex Mono', monospace;
-    }
+    .font-serif-display { font-family: 'Fraunces', serif; }
+    .font-mono-code { font-family: 'IBM Plex Mono', monospace; }
     @media print {
-      body * {
-        visibility: hidden;
-      }
-      #printable-receipt, #printable-receipt * {
-        visibility: visible;
-      }
-      #printable-receipt {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-      }
+      body * { visibility: hidden; }
+      #printable-receipt, #printable-receipt * { visibility: visible; }
+      #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; }
     }
   </style>
 </head>
 <body class="antialiased selection:bg-[#B8923F] selection:text-[#FAF5E8]">
   <div id="root"></div>
 
-  <!-- Complete Standalone Application Logic -->
   <script type="text/babel">
     const { useState, useEffect, useMemo, useRef } = React;
 
-    // --- GENRE COLOR PALETTE ---
     const GENRE_COLORS = {
       'Computer Science': '#1D3B53',
       'Literature': '#8C4A3B',
       'Fiction': '#7A3E2D',
       'Mathematics': '#2C4C38',
       'Physics': '#283B42',
-      'Astronomy': '#1F2A44',
       'Biology': '#2A5C45',
       'Economics': '#4A3B2C',
       'History': '#6A3B22',
@@ -93,7 +67,6 @@
       'Philosophy': '#3D4528',
     };
 
-    // --- INITIAL CAMPUS CATALOG ---
     const INITIAL_BOOKS = [
       {
         id: 1,
@@ -105,7 +78,7 @@
         year: 2009,
         pages: 1292,
         shelfLocation: "Stack 3A · Shelf 2",
-        description: "Comprehensive guide to modern computer algorithms covering sorting, graph theory, dynamic programming, and computational complexity.",
+        description: "Comprehensive guide to modern algorithms covering sorting, graph theory, and dynamic programming.",
         out: false,
         timesBorrowed: 42
       },
@@ -123,9 +96,7 @@
         out: true,
         borrower: "Elena Rostova",
         borrowerId: "STU-8821",
-        borrowedDate: "2026-09-28",
         due: "Oct 12, 2026",
-        dueDateIso: "2026-10-12",
         timesBorrowed: 38
       },
       {
@@ -138,7 +109,7 @@
         year: 1996,
         pages: 657,
         shelfLocation: "Stack 3A · Shelf 3",
-        description: "The seminal MIT textbook exploring computational processes, functional abstraction, and meta-linguistic mechanics.",
+        description: "The seminal MIT textbook exploring computational processes and functional abstractions.",
         out: false,
         timesBorrowed: 29
       },
@@ -152,13 +123,11 @@
         year: 1949,
         pages: 328,
         shelfLocation: "Stack 1B · Shelf 4",
-        description: "Dystopian political social science fiction exploring total surveillance, doublespeak, and totalitarian control in Oceania.",
+        description: "Dystopian political social science fiction exploring total surveillance, doublespeak, and state control.",
         out: true,
         borrower: "Marcus Vance",
         borrowerId: "STU-4109",
-        borrowedDate: "2026-09-15",
         due: "Sep 29, 2026",
-        dueDateIso: "2026-09-29",
         timesBorrowed: 51
       },
       {
@@ -171,7 +140,7 @@
         year: 1960,
         pages: 336,
         shelfLocation: "Stack 1B · Shelf 5",
-        description: "Pulitzer Prize-winning masterpiece set in Maycomb, Alabama, dealing with racial injustice and the destruction of innocence.",
+        description: "Pulitzer Prize-winning masterpiece set in Maycomb dealing with racial injustice and courage.",
         out: false,
         timesBorrowed: 34
       },
@@ -185,7 +154,7 @@
         year: 1925,
         pages: 180,
         shelfLocation: "Stack 1A · Shelf 1",
-        description: "The classic Jazz Age tragedy chronicling Jay Gatsby's obsessive pursuit of Daisy Buchanan across Long Island Sound.",
+        description: "The classic Jazz Age tragedy chronicling Jay Gatsby's pursuit of Daisy Buchanan across Long Island Sound.",
         out: false,
         timesBorrowed: 47
       },
@@ -199,13 +168,11 @@
         year: 1988,
         pages: 212,
         shelfLocation: "Stack 2B · Shelf 3",
-        description: "Landmark exploration of modern cosmology, the Big Bang, black holes, general relativity, and quantum mechanics.",
+        description: "Landmark exploration of modern cosmology, the Big Bang, black holes, and the nature of time.",
         out: true,
         borrower: "Julian Chen",
         borrowerId: "FAC-9012",
-        borrowedDate: "2026-10-01",
         due: "Oct 15, 2026",
-        dueDateIso: "2026-10-15",
         timesBorrowed: 39
       },
       {
@@ -232,7 +199,7 @@
         year: 1976,
         pages: 360,
         shelfLocation: "Stack 2C · Shelf 2",
-        description: "Revolutionary gene-centric view of evolution that popularized the concepts of evolutionary algorithms and memes.",
+        description: "Revolutionary gene-centric view of evolution that popularized evolutionary algorithms and memes.",
         out: false,
         timesBorrowed: 27
       },
@@ -246,7 +213,7 @@
         year: 2011,
         pages: 499,
         shelfLocation: "Stack 5A · Shelf 1",
-        description: "Nobel laureate's tour of behavioral economics and cognitive heuristics separating System 1 intuition from System 2 deliberate logic.",
+        description: "Nobel laureate's tour of behavioral economics separating System 1 intuition from System 2 deliberate logic.",
         out: false,
         timesBorrowed: 44
       },
@@ -260,7 +227,7 @@
         year: 2014,
         pages: 443,
         shelfLocation: "Stack 4C · Shelf 1",
-        description: "Sweeping historical analysis tracing the cognitive, agricultural, and scientific revolutions that forged human hegemony.",
+        description: "Sweeping historical analysis tracing the cognitive, agricultural, and scientific revolutions.",
         out: false,
         timesBorrowed: 49
       },
@@ -274,14 +241,13 @@
         year: 180,
         pages: 254,
         shelfLocation: "Stack 5B · Shelf 1",
-        description: "Private personal journals of the Roman Emperor presenting enduring reflections on Stoic virtue, duty, and mortality.",
+        description: "Private journals of the Roman Emperor presenting reflections on Stoic virtue, duty, and mortality.",
         out: false,
         timesBorrowed: 36
       }
     ];
 
-    // --- AUDIO TONES ---
-    const playScannerSuccessBeep = () => {
+    const playScannerBeep = () => {
       try {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         if (!AudioContextClass) return;
@@ -299,15 +265,12 @@
       } catch (e) {}
     };
 
-    // --- BARCODE GENERATOR HELPER ---
     function generateBarcodeBars(code, targetWidth = 260) {
       const clean = (code || '9780000000000').replace(/[^0-9]/g, '') || '9780000000000';
       const bars = [];
       let currentX = 8;
-      // Start guard
       bars.push({ x: currentX, width: 2 }); currentX += 4;
       bars.push({ x: currentX, width: 2 }); currentX += 4;
-
       for (let i = 0; i < clean.length; i++) {
         const val = parseInt(clean[i], 10);
         const w1 = (val % 3) + 1.2;
@@ -315,66 +278,56 @@
         bars.push({ x: currentX, width: w1 }); currentX += w1 + 2;
         bars.push({ x: currentX, width: w2 }); currentX += w2 + 3;
       }
-      // Stop guard
       bars.push({ x: currentX, width: 2 }); currentX += 4;
       bars.push({ x: currentX, width: 2 });
       return bars;
     }
 
-    // --- STACKS FOR FLOOR PLAN ---
     const STACK_ZONES = [
-      { id: 'Stack 3A', floor: 1, name: 'Computing & Algorithms Stacks', wing: 'North Tech Wing', genres: ['Computer Science'], callRange: 'QA75 - QA76.9', x: 60, y: 80, width: 220, height: 100, shelves: 4 },
-      { id: 'Stack 1A', floor: 1, name: 'Literature & Classical Drama', wing: 'South Classical Wing', genres: ['Literature'], callRange: 'PN45 - PR120', x: 60, y: 310, width: 220, height: 90, shelves: 3 },
-      { id: 'Stack 1B', floor: 1, name: 'Modern & World Fiction', wing: 'South Fiction Wing', genres: ['Fiction'], callRange: 'PR6000 - PZ10', x: 60, y: 430, width: 220, height: 100, shelves: 6 },
-      { id: 'Stack 2A', floor: 2, name: 'Pure Mathematics & Logic', wing: 'West Science Gallery', genres: ['Mathematics'], callRange: 'QA1 - QA184', x: 60, y: 70, width: 200, height: 80, shelves: 5 },
-      { id: 'Stack 2B', floor: 2, name: 'Theoretical Physics & Astrophysics', wing: 'West Science Gallery', genres: ['Physics', 'Astronomy'], callRange: 'QB1 - QC99', x: 60, y: 170, width: 200, height: 90, shelves: 4 },
-      { id: 'Stack 2C', floor: 2, name: 'Biological Sciences & Genetics', wing: 'West Science Gallery', genres: ['Biology'], callRange: 'QH301 - QR500', x: 60, y: 280, width: 200, height: 80, shelves: 3 },
-      { id: 'Stack 4A', floor: 2, name: 'Macroeconomics & Global Markets', wing: 'East Social Science Atrium', genres: ['Economics'], callRange: 'HB1 - HD9999', x: 540, y: 70, width: 200, height: 85, shelves: 4 },
-      { id: 'Stack 4C', floor: 2, name: 'World Civilizations & Archaeology', wing: 'East Social Science Atrium', genres: ['History'], callRange: 'CB1 - CC999', x: 540, y: 180, width: 200, height: 90, shelves: 4 },
-      { id: 'Stack 5A', floor: 2, name: 'Behavioral Psychology & Cognition', wing: 'South Philosophy Sanctuary', genres: ['Psychology'], callRange: 'BF1 - BJ1500', x: 540, y: 330, width: 200, height: 85, shelves: 4 },
-      { id: 'Stack 5B', floor: 2, name: 'Moral Philosophy & Metaphysics', wing: 'South Philosophy Sanctuary', genres: ['Philosophy'], callRange: 'B1 - BD700', x: 540, y: 440, width: 200, height: 90, shelves: 4 }
+      { id: 'Stack 3A', floor: 1, name: 'Computing & Algorithms Stacks', wing: 'North Tech Wing', genres: ['Computer Science'], callRange: 'QA75 - QA76.9' },
+      { id: 'Stack 1A', floor: 1, name: 'Literature & Classical Drama', wing: 'South Classical Wing', genres: ['Literature'], callRange: 'PN45 - PR120' },
+      { id: 'Stack 1B', floor: 1, name: 'Modern & World Fiction', wing: 'South Fiction Wing', genres: ['Fiction'], callRange: 'PR6000 - PZ10' },
+      { id: 'Stack 2A', floor: 2, name: 'Pure Mathematics & Logic', wing: 'West Science Gallery', genres: ['Mathematics'], callRange: 'QA1 - QA184' },
+      { id: 'Stack 2B', floor: 2, name: 'Theoretical Physics & Astrophysics', wing: 'West Science Gallery', genres: ['Physics'], callRange: 'QB1 - QC99' },
+      { id: 'Stack 2C', floor: 2, name: 'Biological Sciences & Genetics', wing: 'West Science Gallery', genres: ['Biology'], callRange: 'QH301 - QR500' },
+      { id: 'Stack 4A', floor: 2, name: 'Macroeconomics & Global Markets', wing: 'East Social Science Atrium', genres: ['Economics'], callRange: 'HB1 - HD9999' },
+      { id: 'Stack 4C', floor: 2, name: 'World Civilizations & Archaeology', wing: 'East Social Science Atrium', genres: ['History'], callRange: 'CB1 - CC999' },
+      { id: 'Stack 5A', floor: 2, name: 'Behavioral Psychology & Cognition', wing: 'South Philosophy Sanctuary', genres: ['Psychology'], callRange: 'BF1 - BJ1500' },
+      { id: 'Stack 5B', floor: 2, name: 'Moral Philosophy & Metaphysics', wing: 'South Philosophy Sanctuary', genres: ['Philosophy'], callRange: 'B1 - BD700' }
     ];
 
-    // --- MAIN APP COMPONENT ---
     function App() {
       const [books, setBooks] = useState(() => {
         try {
-          const saved = localStorage.getItem('stackline_standalone_books');
+          const saved = localStorage.getItem('stackline_library_books_master');
           if (saved) return JSON.parse(saved);
         } catch (e) {}
         return INITIAL_BOOKS;
       });
 
       useEffect(() => {
-        localStorage.setItem('stackline_standalone_books', JSON.stringify(books));
+        localStorage.setItem('stackline_library_books_master', JSON.stringify(books));
       }, [books]);
 
-      const [viewMode, setViewMode] = useState('shelf'); // 'shelf' | 'grid' | 'circulation' | 'map'
+      const [viewMode, setViewMode] = useState('shelf');
       const [searchQuery, setSearchQuery] = useState('');
       const [selectedGenre, setSelectedGenre] = useState('');
-      const [availabilityFilter, setAvailabilityFilter] = useState('all');
-
-      // Modals
       const [inspectingBook, setInspectingBook] = useState(null);
       const [borrowingBook, setBorrowingBook] = useState(null);
       const [isScannerOpen, setIsScannerOpen] = useState(false);
       const [receiptData, setReceiptData] = useState(null);
-      const [targetMapLocation, setTargetMapLocation] = useState(null);
 
-      // Filtered books
       const filteredBooks = useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         return books.filter(b => {
           const matchQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) || b.call.toLowerCase().includes(q);
           const matchG = !selectedGenre || b.genre === selectedGenre;
-          const matchA = availabilityFilter === 'all' || (availabilityFilter === 'avail' && !b.out) || (availabilityFilter === 'out' && b.out);
-          return matchQ && matchG && matchA;
+          return matchQ && matchG;
         });
-      }, [books, searchQuery, selectedGenre, availabilityFilter]);
+      }, [books, searchQuery, selectedGenre]);
 
       const overdueCount = books.filter(b => b.out && b.due && b.due.includes('Sep')).length;
 
-      // Borrow action
       const handleConfirmBorrow = (bookId, patronName, patronId, days) => {
         const d = new Date();
         d.setDate(d.getDate() + days);
@@ -401,7 +354,6 @@
         }
       };
 
-      // Return action
       const handleReturnBook = (bookId) => {
         setBooks(prev => prev.map(b => b.id === bookId ? {
           ...b,
@@ -413,7 +365,6 @@
         setInspectingBook(null);
       };
 
-      // Export CSV
       const handleExportCsv = () => {
         const headers = ["Title", "Author", "Genre", "Call Number", "Shelf", "ISBN", "Status", "Borrower", "Due Date"];
         const rows = books.map(b => [
@@ -444,7 +395,7 @@
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EFE7D3]/15 pb-4">
                 <div className="flex items-center gap-2 text-xs font-mono-code text-[#B8923F]">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#B8923F] animate-pulse"></span>
-                  <span>Stackline · St. Jude Campus Library System</span>
+                  <span>Stackline Campus Library System · St. Jude Archival Stacks</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -468,7 +419,7 @@
                     Campus Library Stacks
                   </h1>
                   <p className="font-mono-code text-xs text-[#EFE7D3]/70 mt-1">
-                    Visual Circulation Desk & Interactive Shelf Stacks Catalog
+                    Visual Circulation Desk & Interactive Stacks Catalog
                   </p>
                 </div>
 
@@ -517,7 +468,7 @@
             </div>
           </header>
 
-          {/* MAIN CONTENT */}
+          {/* MAIN CONTENT AREA */}
           <main className="max-w-6xl w-full mx-auto p-4 sm:p-8 flex-1">
             {/* STATS STRIP */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 font-mono-code text-xs">
@@ -570,7 +521,6 @@
                         const callParts = (book.call || 'GEN 001').split(' ');
                         const classPart = callParts[0] || 'QA76';
                         const cutterPart = callParts.slice(1).join(' ') || '.01';
-                        const isHovered = inspectingBook?.id === book.id;
 
                         return (
                           <div
@@ -1090,7 +1040,7 @@
                       <button
                         key={book.id}
                         onClick={() => {
-                          playScannerSuccessBeep();
+                          playScannerBeep();
                           setIsScannerOpen(false);
                           setInspectingBook(book);
                         }}
