@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stackline — Smart Campus Library System (Standalone Single File)</title>
+  <meta name="description" content="Interactive campus library management and visual bookshelf catalog system with real-time checkout, circulation tracking, overdue monitoring, optical barcode scanner, and building floor plan." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231F3A2E'><path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/><path d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/></svg>" />
+
+  <!-- Academic Archival Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Fraunces', 'serif'],
+            mono: ['IBM Plex Mono', 'monospace'],
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              green: '#1F3A2E',
+              darkgreen: '#152922',
+              cream: '#EFE7D3',
+              gold: '#B8923F',
+              rust: '#8C4A3B',
+              oak: '#6E4823',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18, React DOM & Babel Standalone -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      background-color: #EFE7D3;
+      color: #23281F;
+      font-family: 'Inter', sans-serif;
+    }
+    .font-serif-display {
+      font-family: 'Fraunces', serif;
+    }
+    .font-mono-code {
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printable-receipt, #printable-receipt * {
+        visibility: visible;
+      }
+      #printable-receipt {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-[#B8923F] selection:text-[#FAF5E8]">
+  <div id="root"></div>
+
+  <!-- Complete Standalone Application Logic -->
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // --- GENRE COLOR PALETTE ---
+    const GENRE_COLORS = {
+      'Computer Science': '#1D3B53',
+      'Literature': '#8C4A3B',
+      'Fiction': '#7A3E2D',
+      'Mathematics': '#2C4C38',
+      'Physics': '#283B42',
+      'Astronomy': '#1F2A44',
+      'Biology': '#2A5C45',
+      'Economics': '#4A3B2C',
+      'History': '#6A3B22',
+      'Psychology': '#4F2D4F',
+      'Philosophy': '#3D4528',
+    };
+
+    // --- INITIAL CAMPUS CATALOG ---
+    const INITIAL_BOOKS = [
+      {
+        id: 1,
+        title: "Introduction to Algorithms",
+        author: "Thomas H. Cormen, Charles E. Leiserson",
+        genre: "Computer Science",
+        call: "QA76.6 .C662",
+        isbn: "978-0262033848",
+        year: 2009,
+        pages: 1292,
+        shelfLocation: "Stack 3A · Shelf 2",
+        description: "Comprehensive guide to modern computer algorithms covering sorting, graph theory, dynamic programming, and computational complexity.",
+        out: false,
+        timesBorrowed: 42
+      },
+      {
+        id: 2,
+        title: "Clean Code: A Handbook of Agile Craftsmanship",
+        author: "Robert C. Martin",
+        genre: "Computer Science",
+        call: "QA76.76.C64 M37",
+        isbn: "978-0132350884",
+        year: 2008,
+        pages: 464,
+        shelfLocation: "Stack 3A · Shelf 1",
+        description: "Principles, patterns, and practices of writing maintainable, readable, and robust software code.",
+        out: true,
+        borrower: "Elena Rostova",
+        borrowerId: "STU-8821",
+        borrowedDate: "2026-09-28",
+        due: "Oct 12, 2026",
+        dueDateIso: "2026-10-12",
+        timesBorrowed: 38
+      },
+      {
+        id: 3,
+        title: "Structure and Interpretation of Computer Programs",
+        author: "Harold Abelson, Gerald Jay Sussman",
+        genre: "Computer Science",
+        call: "QA76.6 .A255",
+        isbn: "978-0262510875",
+        year: 1996,
+        pages: 657,
+        shelfLocation: "Stack 3A · Shelf 3",
+        description: "The seminal MIT textbook exploring computational processes, functional abstraction, and meta-linguistic mechanics.",
+        out: false,
+        timesBorrowed: 29
+      },
+      {
+        id: 4,
+        title: "Nineteen Eighty-Four",
+        author: "George Orwell",
+        genre: "Fiction",
+        call: "PR6029.R8 N5",
+        isbn: "978-0451524935",
+        year: 1949,
+        pages: 328,
+        shelfLocation: "Stack 1B · Shelf 4",
+        description: "Dystopian political social science fiction exploring total surveillance, doublespeak, and totalitarian control in Oceania.",
+        out: true,
+        borrower: "Marcus Vance",
+        borrowerId: "STU-4109",
+        borrowedDate: "2026-09-15",
+        due: "Sep 29, 2026",
+        dueDateIso: "2026-09-29",
+        timesBorrowed: 51
+      },
+      {
+        id: 5,
+        title: "To Kill a Mockingbird",
+        author: "Harper Lee",
+        genre: "Fiction",
+        call: "PZ7.L514 To",
+        isbn: "978-0060935467",
+        year: 1960,
+        pages: 336,
+        shelfLocation: "Stack 1B · Shelf 5",
+        description: "Pulitzer Prize-winning masterpiece set in Maycomb, Alabama, dealing with racial injustice and the destruction of innocence.",
+        out: false,
+        timesBorrowed: 34
+      },
+      {
+        id: 6,
+        title: "The Great Gatsby",
+        author: "F. Scott Fitzgerald",
+        genre: "Literature",
+        call: "PS3511.I9 G7",
+        isbn: "978-0743273565",
+        year: 1925,
+        pages: 180,
+        shelfLocation: "Stack 1A · Shelf 1",
+        description: "The classic Jazz Age tragedy chronicling Jay Gatsby's obsessive pursuit of Daisy Buchanan across Long Island Sound.",
+        out: false,
+        timesBorrowed: 47
+      },
+      {
+        id: 7,
+        title: "A Brief History of Time",
+        author: "Stephen Hawking",
+        genre: "Physics",
+        call: "QB981 .H377",
+        isbn: "978-0553380163",
+        year: 1988,
+        pages: 212,
+        shelfLocation: "Stack 2B · Shelf 3",
+        description: "Landmark exploration of modern cosmology, the Big Bang, black holes, general relativity, and quantum mechanics.",
+        out: true,
+        borrower: "Julian Chen",
+        borrowerId: "FAC-9012",
+        borrowedDate: "2026-10-01",
+        due: "Oct 15, 2026",
+        dueDateIso: "2026-10-15",
+        timesBorrowed: 39
+      },
+      {
+        id: 8,
+        title: "Linear Algebra Done Right",
+        author: "Sheldon Axler",
+        genre: "Mathematics",
+        call: "QA184 .A96",
+        isbn: "978-3319110790",
+        year: 2015,
+        pages: 340,
+        shelfLocation: "Stack 2A · Shelf 5",
+        description: "Novel determinant-free pedagogical treatment of linear operators on finite-dimensional inner product spaces.",
+        out: false,
+        timesBorrowed: 31
+      },
+      {
+        id: 9,
+        title: "The Selfish Gene",
+        author: "Richard Dawkins",
+        genre: "Biology",
+        call: "QH437 .D38",
+        isbn: "978-0199291151",
+        year: 1976,
+        pages: 360,
+        shelfLocation: "Stack 2C · Shelf 2",
+        description: "Revolutionary gene-centric view of evolution that popularized the concepts of evolutionary algorithms and memes.",
+        out: false,
+        timesBorrowed: 27
+      },
+      {
+        id: 10,
+        title: "Thinking, Fast and Slow",
+        author: "Daniel Kahneman",
+        genre: "Psychology",
+        call: "BF441 .K238",
+        isbn: "978-0374533557",
+        year: 2011,
+        pages: 499,
+        shelfLocation: "Stack 5A · Shelf 1",
+        description: "Nobel laureate's tour of behavioral economics and cognitive heuristics separating System 1 intuition from System 2 deliberate logic.",
+        out: false,
+        timesBorrowed: 44
+      },
+      {
+        id: 11,
+        title: "Sapiens: A Brief History of Humankind",
+        author: "Yuval Noah Harari",
+        genre: "History",
+        call: "CB113.H37 S2",
+        isbn: "978-0062316097",
+        year: 2014,
+        pages: 443,
+        shelfLocation: "Stack 4C · Shelf 1",
+        description: "Sweeping historical analysis tracing the cognitive, agricultural, and scientific revolutions that forged human hegemony.",
+        out: false,
+        timesBorrowed: 49
+      },
+      {
+        id: 12,
+        title: "Meditations",
+        author: "Marcus Aurelius",
+        genre: "Philosophy",
+        call: "B580 .A3",
+        isbn: "978-0812968255",
+        year: 180,
+        pages: 254,
+        shelfLocation: "Stack 5B · Shelf 1",
+        description: "Private personal journals of the Roman Emperor presenting enduring reflections on Stoic virtue, duty, and mortality.",
+        out: false,
+        timesBorrowed: 36
+      }
+    ];
+
+    // --- AUDIO TONES ---
+    const playScannerSuccessBeep = () => {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        const ctx = new AudioContextClass();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(2350, ctx.currentTime);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+      } catch (e) {}
+    };
+
+    // --- BARCODE GENERATOR HELPER ---
+    function generateBarcodeBars(code, targetWidth = 260) {
+      const clean = (code || '9780000000000').replace(/[^0-9]/g, '') || '9780000000000';
+      const bars = [];
+      let currentX = 8;
+      // Start guard
+      bars.push({ x: currentX, width: 2 }); currentX += 4;
+      bars.push({ x: currentX, width: 2 }); currentX += 4;
+
+      for (let i = 0; i < clean.length; i++) {
+        const val = parseInt(clean[i], 10);
+        const w1 = (val % 3) + 1.2;
+        const w2 = ((val + 1) % 2) + 1;
+        bars.push({ x: currentX, width: w1 }); currentX += w1 + 2;
+        bars.push({ x: currentX, width: w2 }); currentX += w2 + 3;
+      }
+      // Stop guard
+      bars.push({ x: currentX, width: 2 }); currentX += 4;
+      bars.push({ x: currentX, width: 2 });
+      return bars;
+    }
+
+    // --- STACKS FOR FLOOR PLAN ---
+    const STACK_ZONES = [
+      { id: 'Stack 3A', floor: 1, name: 'Computing & Algorithms Stacks', wing: 'North Tech Wing', genres: ['Computer Science'], callRange: 'QA75 - QA76.9', x: 60, y: 80, width: 220, height: 100, shelves: 4 },
+      { id: 'Stack 1A', floor: 1, name: 'Literature & Classical Drama', wing: 'South Classical Wing', genres: ['Literature'], callRange: 'PN45 - PR120', x: 60, y: 310, width: 220, height: 90, shelves: 3 },
+      { id: 'Stack 1B', floor: 1, name: 'Modern & World Fiction', wing: 'South Fiction Wing', genres: ['Fiction'], callRange: 'PR6000 - PZ10', x: 60, y: 430, width: 220, height: 100, shelves: 6 },
+      { id: 'Stack 2A', floor: 2, name: 'Pure Mathematics & Logic', wing: 'West Science Gallery', genres: ['Mathematics'], callRange: 'QA1 - QA184', x: 60, y: 70, width: 200, height: 80, shelves: 5 },
+      { id: 'Stack 2B', floor: 2, name: 'Theoretical Physics & Astrophysics', wing: 'West Science Gallery', genres: ['Physics', 'Astronomy'], callRange: 'QB1 - QC99', x: 60, y: 170, width: 200, height: 90, shelves: 4 },
+      { id: 'Stack 2C', floor: 2, name: 'Biological Sciences & Genetics', wing: 'West Science Gallery', genres: ['Biology'], callRange: 'QH301 - QR500', x: 60, y: 280, width: 200, height: 80, shelves: 3 },
+      { id: 'Stack 4A', floor: 2, name: 'Macroeconomics & Global Markets', wing: 'East Social Science Atrium', genres: ['Economics'], callRange: 'HB1 - HD9999', x: 540, y: 70, width: 200, height: 85, shelves: 4 },
+      { id: 'Stack 4C', floor: 2, name: 'World Civilizations & Archaeology', wing: 'East Social Science Atrium', genres: ['History'], callRange: 'CB1 - CC999', x: 540, y: 180, width: 200, height: 90, shelves: 4 },
+      { id: 'Stack 5A', floor: 2, name: 'Behavioral Psychology & Cognition', wing: 'South Philosophy Sanctuary', genres: ['Psychology'], callRange: 'BF1 - BJ1500', x: 540, y: 330, width: 200, height: 85, shelves: 4 },
+      { id: 'Stack 5B', floor: 2, name: 'Moral Philosophy & Metaphysics', wing: 'South Philosophy Sanctuary', genres: ['Philosophy'], callRange: 'B1 - BD700', x: 540, y: 440, width: 200, height: 90, shelves: 4 }
+    ];
+
+    // --- MAIN APP COMPONENT ---
+    function App() {
+      const [books, setBooks] = useState(() => {
+        try {
+          const saved = localStorage.getItem('stackline_standalone_books');
+          if (saved) return JSON.parse(saved);
+        } catch (e) {}
+        return INITIAL_BOOKS;
+      });
+
+      useEffect(() => {
+        localStorage.setItem('stackline_standalone_books', JSON.stringify(books));
+      }, [books]);
+
+      const [viewMode, setViewMode] = useState('shelf'); // 'shelf' | 'grid' | 'circulation' | 'map'
+      const [searchQuery, setSearchQuery] = useState('');
+      const [selectedGenre, setSelectedGenre] = useState('');
+      const [availabilityFilter, setAvailabilityFilter] = useState('all');
+
+      // Modals
+      const [inspectingBook, setInspectingBook] = useState(null);
+      const [borrowingBook, setBorrowingBook] = useState(null);
+      const [isScannerOpen, setIsScannerOpen] = useState(false);
+      const [receiptData, setReceiptData] = useState(null);
+      const [targetMapLocation, setTargetMapLocation] = useState(null);
+
+      // Filtered books
+      const filteredBooks = useMemo(() => {
+        const q = searchQuery.toLowerCase().trim();
+        return books.filter(b => {
+          const matchQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) || b.call.toLowerCase().includes(q);
+          const matchG = !selectedGenre || b.genre === selectedGenre;
+          const matchA = availabilityFilter === 'all' || (availabilityFilter === 'avail' && !b.out) || (availabilityFilter === 'out' && b.out);
+          return matchQ && matchG && matchA;
+        });
+      }, [books, searchQuery, selectedGenre, availabilityFilter]);
+
+      const overdueCount = books.filter(b => b.out && b.due && b.due.includes('Sep')).length;
+
+      // Borrow action
+      const handleConfirmBorrow = (bookId, patronName, patronId, days) => {
+        const d = new Date();
+        d.setDate(d.getDate() + days);
+        const dueText = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+
+        setBooks(prev => prev.map(b => b.id === bookId ? {
+          ...b,
+          out: true,
+          borrower: patronName,
+          borrowerId: patronId,
+          due: dueText,
+          timesBorrowed: (b.timesBorrowed || 0) + 1
+        } : b));
+
+        const target = books.find(b => b.id === bookId);
+        setBorrowingBook(null);
+        if (target) {
+          setReceiptData({
+            book: { ...target, out: true, borrower: patronName, borrowerId: patronId, due: dueText },
+            patronName,
+            patronId,
+            days
+          });
+        }
+      };
+
+      // Return action
+      const handleReturnBook = (bookId) => {
+        setBooks(prev => prev.map(b => b.id === bookId ? {
+          ...b,
+          out: false,
+          borrower: undefined,
+          borrowerId: undefined,
+          due: undefined
+        } : b));
+        setInspectingBook(null);
+      };
+
+      // Export CSV
+      const handleExportCsv = () => {
+        const headers = ["Title", "Author", "Genre", "Call Number", "Shelf", "ISBN", "Status", "Borrower", "Due Date"];
+        const rows = books.map(b => [
+          `"${b.title.replace(/"/g, '""')}"`,
+          `"${b.author}"`,
+          `"${b.genre}"`,
+          `"${b.call}"`,
+          `"${b.shelfLocation || ''}"`,
+          `"${b.isbn || ''}"`,
+          b.out ? "Checked Out" : "Available",
+          `"${b.borrower || ''}"`,
+          `"${b.due || ''}"`
+        ]);
+        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+        const link = document.createElement("a");
+        link.setAttribute("href", encodeURI(csvContent));
+        link.setAttribute("download", `stackline_catalog_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col bg-[#EFE7D3]">
+          {/* HEADER */}
+          <header className="bg-[#1F3A2E] text-[#EFE7D3] pt-6 pb-8 px-4 sm:px-8 border-b-4 border-[#B8923F] shadow-lg">
+            <div className="max-w-6xl mx-auto space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EFE7D3]/15 pb-4">
+                <div className="flex items-center gap-2 text-xs font-mono-code text-[#B8923F]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#B8923F] animate-pulse"></span>
+                  <span>Stackline · St. Jude Campus Library System</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsScannerOpen(true)}
+                    className="px-3 py-1.5 bg-[#B8923F] hover:bg-[#a37f33] text-[#152922] font-semibold text-xs tracking-wider uppercase rounded shadow transition-all hover:scale-105"
+                  >
+                    Scan Barcode
+                  </button>
+                  <button
+                    onClick={handleExportCsv}
+                    className="px-3 py-1.5 bg-[#152922] hover:bg-black/40 text-[#EFE7D3] border border-[#EFE7D3]/20 text-xs font-mono-code rounded"
+                  >
+                    Export CSV
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                <div>
+                  <h1 className="font-serif-display font-bold text-3xl sm:text-4xl text-[#FAF5E8] tracking-tight">
+                    Campus Library Stacks
+                  </h1>
+                  <p className="font-mono-code text-xs text-[#EFE7D3]/70 mt-1">
+                    Visual Circulation Desk & Interactive Shelf Stacks Catalog
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Search titles, authors, call numbers..."
+                    className="px-3 py-1.5 bg-[#152922] text-[#FAF5E8] placeholder-[#EFE7D3]/40 border border-[#EFE7D3]/20 rounded text-xs focus:outline-none focus:border-[#B8923F] w-64"
+                  />
+                  <select
+                    value={selectedGenre}
+                    onChange={e => setSelectedGenre(e.target.value)}
+                    className="px-2 py-1.5 bg-[#152922] text-[#FAF5E8] border border-[#EFE7D3]/20 rounded text-xs focus:outline-none focus:border-[#B8923F]"
+                  >
+                    <option value="">All Subjects</option>
+                    {Object.keys(GENRE_COLORS).map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* View Switcher Tabs */}
+              <div className="pt-2 flex flex-wrap gap-2 text-xs font-mono-code">
+                {[
+                  { id: 'shelf', label: 'Open Shelf' },
+                  { id: 'grid', label: 'Catalog Cards' },
+                  { id: 'circulation', label: 'Circulation Ledger' },
+                  { id: 'map', label: 'Library Floor Map' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setViewMode(tab.id)}
+                    className={`px-3 py-1.5 rounded transition-colors ${
+                      viewMode === tab.id
+                        ? 'bg-[#B8923F] text-[#152922] font-bold shadow'
+                        : 'bg-[#152922] text-[#EFE7D3]/80 hover:text-white'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </header>
+
+          {/* MAIN CONTENT */}
+          <main className="max-w-6xl w-full mx-auto p-4 sm:p-8 flex-1">
+            {/* STATS STRIP */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 font-mono-code text-xs">
+              <div className="bg-[#FAF5E8] border border-[#23281F]/15 p-3 rounded-lg shadow-xs">
+                <span className="text-[#23281F]/60 block text-[10px]">TOTAL VOLUMES</span>
+                <span className="font-bold text-lg text-[#1F3A2E]">{books.length} Titles</span>
+              </div>
+              <div className="bg-[#FAF5E8] border border-[#23281F]/15 p-3 rounded-lg shadow-xs">
+                <span className="text-[#23281F]/60 block text-[10px]">ON SHELVES</span>
+                <span className="font-bold text-lg text-[#4C7A5D]">{books.filter(b => !b.out).length} Available</span>
+              </div>
+              <div className="bg-[#FAF5E8] border border-[#23281F]/15 p-3 rounded-lg shadow-xs">
+                <span className="text-[#23281F]/60 block text-[10px]">ACTIVE LOANS</span>
+                <span className="font-bold text-lg text-[#8C4A3B]">{books.filter(b => b.out).length} Borrowed</span>
+              </div>
+              <div className="bg-[#FAF5E8] border border-[#23281F]/15 p-3 rounded-lg shadow-xs">
+                <span className="text-[#23281F]/60 block text-[10px]">OVERDUE WARNINGS</span>
+                <span className="font-bold text-lg text-[#8C4A3B]">{overdueCount} Alerts</span>
+              </div>
+            </div>
+
+            {/* VIEW 1: OPEN SHELF (REALISTIC 3D ARCHIVAL BOOKSHELF) */}
+            {viewMode === 'shelf' && (
+              <div className="space-y-8 select-none">
+                <div className="bg-[#2E1C12] border-4 border-[#1C1008] rounded-2xl p-4 sm:p-7 shadow-2xl relative overflow-hidden">
+                  <div className="text-center mb-6">
+                    <span className="font-serif-display text-sm tracking-widest text-[#EFE7D3]/80 uppercase font-semibold">
+                      St. Jude Archival Stacks · Central Aisle Gallery
+                    </span>
+                    <div className="h-0.5 w-36 bg-[#B8923F] mx-auto mt-1 shadow-sm" />
+                  </div>
+
+                  {/* Wood Panelled Backboard Shelf Cavity */}
+                  <div
+                    className="relative flex items-end justify-start overflow-x-auto px-6 pt-12 pb-0 min-h-[340px] rounded-t-lg scrollbar-none"
+                    style={{
+                      backgroundImage: `
+                        linear-gradient(to right, rgba(0,0,0,0.55) 0%, transparent 8%, transparent 92%, rgba(0,0,0,0.55) 100%),
+                        repeating-linear-gradient(90deg, #3A2317 0px, #3A2317 78px, #2A180F 80px)
+                      `,
+                    }}
+                  >
+                    <div className="flex items-end gap-2 sm:gap-3 min-w-max pb-0 z-10 mx-auto">
+                      {filteredBooks.map((book, idx) => {
+                        const spineColor = GENRE_COLORS[book.genre] || '#2C4C38';
+                        const pages = book.pages || 320;
+                        const widthPx = Math.min(68, Math.max(46, Math.floor(pages / 26) + 38));
+                        const heightPx = Math.min(265, Math.max(210, 210 + ((book.id * 13 + idx * 7) % 45)));
+                        const authorSurname = (book.author || '').split(',')[0].trim().split(' ').pop().toUpperCase();
+                        const callParts = (book.call || 'GEN 001').split(' ');
+                        const classPart = callParts[0] || 'QA76';
+                        const cutterPart = callParts.slice(1).join(' ') || '.01';
+                        const isHovered = inspectingBook?.id === book.id;
+
+                        return (
+                          <div
+                            key={book.id}
+                            onClick={() => setInspectingBook(book)}
+                            style={{
+                              width: `${widthPx}px`,
+                              height: `${heightPx}px`,
+                            }}
+                            className="relative rounded-t-sm cursor-pointer transition-all duration-200 group/spine flex flex-col justify-between overflow-hidden shadow-[0_6px_14px_rgba(0,0,0,0.5)] hover:-translate-y-6 hover:shadow-[0_22px_32px_rgba(0,0,0,0.7)] hover:scale-102"
+                            title={`${book.title} by ${book.author} (${book.call})`}
+                          >
+                            {/* 3D Cylindrical Curved Highlight & Shadow Overlay */}
+                            <div
+                              className="absolute inset-0 pointer-events-none z-20"
+                              style={{
+                                background: 'linear-gradient(90deg, rgba(0,0,0,0.5) 0%, rgba(255,255,255,0.2) 14%, rgba(255,255,255,0.02) 42%, rgba(0,0,0,0.12) 80%, rgba(0,0,0,0.65) 100%)',
+                              }}
+                            />
+
+                            {/* Base Leather Hue & Texture */}
+                            <div
+                              className="absolute inset-0 z-0"
+                              style={{
+                                backgroundColor: spineColor,
+                                backgroundImage: `
+                                  radial-gradient(circle at 50% 30%, rgba(255,255,255,0.08) 0%, transparent 70%),
+                                  repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 2px, transparent 2px, transparent 4px)
+                                `,
+                              }}
+                            />
+
+                            {/* Upper Headcap & Gold Embossed Rib Bands */}
+                            <div className="relative z-10 w-full pt-2 px-1">
+                              <div className="w-full h-1 bg-black/40 rounded-t-sm mb-1" />
+                              <div className="w-full flex flex-col gap-0.5 px-0.5">
+                                <div className="h-[2px] bg-[#E8C872] shadow-[0_1px_1px_rgba(0,0,0,0.6)] rounded-xs" />
+                                <div className="h-[1px] bg-[#B8923F]/80 rounded-xs" />
+                              </div>
+                              {/* Author Surname */}
+                              <div className="mt-1.5 text-center overflow-hidden px-0.5">
+                                <span className="font-mono-code font-bold text-[8.5px] tracking-wider text-[#E8C872] drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] truncate block">
+                                  {authorSurname}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Middle Title (Full Height Legible Vertical Typography) */}
+                            <div className="relative z-10 flex-1 flex items-center justify-center py-2 px-0.5 overflow-hidden">
+                              <span
+                                className="font-serif-display font-bold text-[11px] sm:text-[12px] text-[#FAF5E8] tracking-wider drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)] whitespace-nowrap overflow-hidden select-none text-center"
+                                style={{
+                                  writingMode: 'vertical-rl',
+                                  transform: 'rotate(180deg)',
+                                  maxHeight: `${heightPx - 90}px`,
+                                  letterSpacing: '0.04em',
+                                }}
+                              >
+                                {book.title}
+                              </span>
+                            </div>
+
+                            {/* Lower Raised Gold Rib Band */}
+                            <div className="relative z-10 w-full px-1.5 my-1">
+                              <div className="h-[2px] bg-[#E8C872] shadow-[0_1px_1px_rgba(0,0,0,0.6)] rounded-xs" />
+                            </div>
+
+                            {/* Authentic Paper Call Number Sticker at Spine Base */}
+                            <div className="relative z-10 mx-1 mb-2 bg-[#FAF4E6] text-[#1C1008] border border-black/30 rounded-xs px-1 py-1 shadow-sm text-center">
+                              <div className="font-mono-code font-bold text-[8px] leading-tight tracking-tighter truncate text-[#8C4A3B]">
+                                {classPart}
+                              </div>
+                              <div className="font-mono-code font-bold text-[7.5px] leading-tight tracking-tighter truncate text-[#1C1008]/85">
+                                {cutterPart}
+                              </div>
+                            </div>
+
+                            {/* Hanging Bookmark Ribbon if Checked Out */}
+                            {book.out && (
+                              <div
+                                className="absolute top-0 right-1.5 w-2.5 h-6 bg-[#B8923F] rounded-b-xs shadow-md z-30"
+                                title="Volume on Active Loan"
+                              >
+                                <div className="w-full h-1 bg-black/20" />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Solid Beveled Oak Wood Shelf Board with Brass Plaque */}
+                  <div className="relative mt-0 z-20">
+                    <div className="h-5 bg-gradient-to-r from-[#3D2517] via-[#5C3822] to-[#3D2517] border-t-2 border-[#7A4B2F] shadow-[0_2px_4px_rgba(0,0,0,0.4)]" />
+                    <div className="h-6 bg-gradient-to-b from-[#4A2D1B] to-[#1C1008] border-b-2 border-black flex items-center justify-between px-6 shadow-xl">
+                      <div className="w-2 h-2 rounded-full bg-[#1C1008] border border-[#B8923F]/40 shadow-inner" />
+                      <div className="bg-gradient-to-r from-[#94742E] via-[#D4AF37] to-[#94742E] text-[#152922] font-mono-code text-[9px] font-bold px-4 py-0.5 rounded-xs tracking-widest uppercase shadow-md border border-[#FAF5E8]/40">
+                        ST. JUDE CAMPUS ARCHIVES · AISLE A
+                      </div>
+                      <div className="w-2 h-2 rounded-full bg-[#1C1008] border border-[#B8923F]/40 shadow-inner" />
+                    </div>
+                    <div className="h-4 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
+                  </div>
+
+                  <div className="mt-4 text-center text-xs font-mono-code text-[#EFE7D3]/70">
+                    Click any volume spine above to pull it from the shelf and open its loan card
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* VIEW 2: CATALOG CARDS GRID */}
+            {viewMode === 'grid' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredBooks.map(book => (
+                  <div
+                    key={book.id}
+                    onClick={() => setInspectingBook(book)}
+                    className="bg-[#FAF5E8] border border-[#23281F]/15 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-[#B8923F] cursor-pointer transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex justify-between items-start gap-2 mb-2">
+                        <span className="font-mono-code text-xs font-bold text-[#8C4A3B]">
+                          {book.call}
+                        </span>
+                        <span className={`text-[10px] font-mono-code px-2 py-0.5 rounded font-bold ${
+                          book.out ? 'bg-[#8C4A3B]/15 text-[#8C4A3B]' : 'bg-[#4C7A5D]/15 text-[#4C7A5D]'
+                        }`}>
+                          {book.out ? 'CHECKED OUT' : 'ON SHELF'}
+                        </span>
+                      </div>
+                      <h3 className="font-serif-display font-bold text-lg text-[#1F3A2E] leading-snug">
+                        {book.title}
+                      </h3>
+                      <p className="text-xs text-[#23281F]/70 mt-1">
+                        by {book.author} ({book.year})
+                      </p>
+                      <p className="text-xs text-[#23281F]/80 mt-3 line-clamp-2 italic font-serif">
+                        "{book.description}"
+                      </p>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-[#23281F]/10 flex justify-between items-center text-xs font-mono-code">
+                      <span className="text-[#23281F]/60">{book.shelfLocation}</span>
+                      <button className="text-[#8C4A3B] hover:underline font-bold">Inspect Card →</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* VIEW 3: CIRCULATION LEDGER */}
+            {viewMode === 'circulation' && (
+              <div className="bg-[#FAF5E8] border border-[#23281F]/15 rounded-xl p-6 shadow-sm overflow-x-auto">
+                <h3 className="font-serif-display font-bold text-xl text-[#1F3A2E] mb-4">
+                  Circulation Desk Lending Ledger
+                </h3>
+                <table className="w-full text-left text-xs font-mono-code">
+                  <thead>
+                    <tr className="border-b-2 border-[#23281F]/20 text-[#23281F]/60">
+                      <th className="py-2.5">TITLE & CALL NUMBER</th>
+                      <th className="py-2.5">PATRON</th>
+                      <th className="py-2.5">DUE DATE</th>
+                      <th className="py-2.5">STATUS</th>
+                      <th className="py-2.5 text-right">ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {books.map(book => (
+                      <tr key={book.id} className="border-b border-[#23281F]/10 hover:bg-white/60">
+                        <td className="py-3">
+                          <div className="font-bold text-[#1F3A2E]">{book.title}</div>
+                          <div className="text-[10px] text-[#8C4A3B]">{book.call}</div>
+                        </td>
+                        <td className="py-3">
+                          {book.borrower ? (
+                            <div>
+                              <div>{book.borrower}</div>
+                              <div className="text-[10px] text-[#23281F]/50">{book.borrowerId}</div>
+                            </div>
+                          ) : (
+                            <span className="text-[#23281F]/40">—</span>
+                          )}
+                        </td>
+                        <td className="py-3 font-bold">
+                          {book.due || 'Available on Shelf'}
+                        </td>
+                        <td className="py-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            book.out ? 'bg-[#8C4A3B]/15 text-[#8C4A3B]' : 'bg-[#4C7A5D]/15 text-[#4C7A5D]'
+                          }`}>
+                            {book.out ? 'CHECKED OUT' : 'AVAILABLE'}
+                          </span>
+                        </td>
+                        <td className="py-3 text-right">
+                          {book.out ? (
+                            <button
+                              onClick={() => handleReturnBook(book.id)}
+                              className="px-2.5 py-1 bg-[#8C4A3B] text-white rounded font-bold hover:bg-[#70392c]"
+                            >
+                              Check In
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setBorrowingBook(book)}
+                              className="px-2.5 py-1 bg-[#1F3A2E] text-white rounded font-bold hover:bg-[#152922]"
+                            >
+                              Check Out
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* VIEW 4: LIBRARY FLOOR MAP */}
+            {viewMode === 'map' && (
+              <div className="bg-[#FAF5E8] border border-[#23281F]/15 rounded-xl p-6 shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h3 className="font-serif-display font-bold text-xl text-[#1F3A2E]">
+                      Architectural Campus Library Blueprint
+                    </h3>
+                    <p className="text-xs font-mono-code text-[#23281F]/60">
+                      Visual stacks layout and physical shelf coordinates
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {STACK_ZONES.map(zone => (
+                    <div
+                      key={zone.id}
+                      className="p-4 bg-white rounded-lg border border-[#23281F]/15 shadow-xs flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="font-mono-code font-bold text-xs text-[#8C4A3B]">{zone.id}</span>
+                          <span className="text-[10px] font-mono-code px-2 py-0.5 bg-[#1F3A2E] text-white rounded">
+                            Level {zone.floor} · {zone.wing}
+                          </span>
+                        </div>
+                        <h4 className="font-serif-display font-bold text-base text-[#1F3A2E]">{zone.name}</h4>
+                        <p className="text-xs text-[#23281F]/70 mt-1 font-mono-code">
+                          LC {zone.callRange} · Subjects: {zone.genres.join(', ')}
+                        </p>
+                      </div>
+
+                      <div className="mt-3 pt-3 border-t border-[#23281F]/10">
+                        <span className="text-[11px] font-mono-code text-[#23281F]/70 block">
+                          Books currently shelved here:
+                        </span>
+                        <div className="space-y-1 mt-1">
+                          {books.filter(b => (b.shelfLocation || '').includes(zone.id)).map(b => (
+                            <div
+                              key={b.id}
+                              onClick={() => setInspectingBook(b)}
+                              className="text-xs text-[#1F3A2E] hover:text-[#B8923F] cursor-pointer flex justify-between"
+                            >
+                              <span className="truncate max-w-[200px]">{b.title}</span>
+                              <span className={`text-[10px] font-mono-code font-bold ${b.out ? 'text-red-600' : 'text-emerald-700'}`}>
+                                {b.out ? 'OUT' : 'AVAIL'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </main>
+
+          {/* FOOTER */}
+          <footer className="mt-12 py-6 border-t border-[#23281F]/15 bg-[#FAF5E8]/60 text-center font-mono-code text-xs text-[#23281F]/60">
+            Stackline Campus Library System · St. Jude Archival Stacks · Standalone HTML Distribution
+          </footer>
+
+          {/* --- MODAL 1: BOOK ARCHIVAL CARD --- */}
+          {inspectingBook && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+              <div className="bg-[#FAF5E8] border-2 border-[#B8923F] rounded-xl max-w-lg w-full p-6 shadow-2xl relative">
+                <button
+                  onClick={() => setInspectingBook(null)}
+                  className="absolute top-4 right-4 text-[#23281F]/60 hover:text-black text-lg font-bold"
+                >
+                  ✕
+                </button>
+                <span className="font-mono-code text-xs font-bold text-[#8C4A3B]">
+                  CALL NUMBER: {inspectingBook.call}
+                </span>
+                <h3 className="font-serif-display font-bold text-2xl text-[#1F3A2E] mt-1 leading-snug">
+                  {inspectingBook.title}
+                </h3>
+                <p className="text-sm text-[#23281F]/70">by {inspectingBook.author} · {inspectingBook.genre}</p>
+
+                <div className="my-4 p-3 bg-white/70 rounded border border-[#23281F]/10 space-y-1.5 text-xs font-mono-code">
+                  <div>Shelf Location: <span className="font-bold">{inspectingBook.shelfLocation}</span></div>
+                  <div>Standard ISBN: <span className="font-bold">{inspectingBook.isbn}</span></div>
+                  <div>Status: <span className={`font-bold ${inspectingBook.out ? 'text-red-700' : 'text-emerald-700'}`}>
+                    {inspectingBook.out ? `Checked out to ${inspectingBook.borrower} (Due: ${inspectingBook.due})` : 'Available for borrowing'}
+                  </span></div>
+                </div>
+
+                <p className="text-xs italic font-serif text-[#23281F]/80 my-3">
+                  "{inspectingBook.description}"
+                </p>
+
+                <div className="flex gap-2 mt-6">
+                  {inspectingBook.out ? (
+                    <button
+                      onClick={() => handleReturnBook(inspectingBook.id)}
+                      className="flex-1 py-2 bg-[#8C4A3B] text-white text-xs font-bold rounded uppercase tracking-wider hover:bg-[#723a2d]"
+                    >
+                      Check In / Return Book
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        const target = inspectingBook;
+                        setInspectingBook(null);
+                        setBorrowingBook(target);
+                      }}
+                      className="flex-1 py-2 bg-[#1F3A2E] text-white text-xs font-bold rounded uppercase tracking-wider hover:bg-[#152922]"
+                    >
+                      Issue Loan / Check Out
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setViewMode('map');
+                      setInspectingBook(null);
+                    }}
+                    className="px-4 py-2 bg-[#E4D9BE] text-[#1F3A2E] text-xs font-bold rounded border border-[#23281F]/20"
+                  >
+                    Locate on Map
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* --- MODAL 2: CHECKOUT DIALOG --- */}
+          {borrowingBook && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+              <div className="bg-[#FAF5E8] border-2 border-[#B8923F] rounded-xl max-w-md w-full p-6 shadow-2xl relative">
+                <button
+                  onClick={() => setBorrowingBook(null)}
+                  className="absolute top-4 right-4 text-[#23281F]/60 hover:text-black text-lg font-bold"
+                >
+                  ✕
+                </button>
+                <h3 className="font-serif-display font-bold text-xl text-[#1F3A2E]">
+                  Issue Circulation Loan
+                </h3>
+                <p className="text-xs text-[#23281F]/70 font-mono-code mt-0.5">
+                  {borrowingBook.title}
+                </p>
+
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    const name = e.target.elements.patronName.value || 'Campus Student';
+                    const id = e.target.elements.patronId.value || 'STU-1001';
+                    const days = parseInt(e.target.elements.days.value || '14', 10);
+                    handleConfirmBorrow(borrowingBook.id, name, id, days);
+                  }}
+                  className="mt-4 space-y-3 font-mono-code text-xs"
+                >
+                  <div>
+                    <label className="block text-[#23281F]/70 mb-1">Patron / Scholar Name:</label>
+                    <input
+                      name="patronName"
+                      defaultValue="Aayush Bodh"
+                      required
+                      className="w-full p-2 bg-white border border-[#23281F]/20 rounded text-xs focus:outline-none focus:border-[#B8923F]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#23281F]/70 mb-1">Patron ID / Card Code:</label>
+                    <input
+                      name="patronId"
+                      defaultValue="STU-7824"
+                      required
+                      className="w-full p-2 bg-white border border-[#23281F]/20 rounded text-xs focus:outline-none focus:border-[#B8923F]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#23281F]/70 mb-1">Loan Period:</label>
+                    <select
+                      name="days"
+                      defaultValue="14"
+                      className="w-full p-2 bg-white border border-[#23281F]/20 rounded text-xs focus:outline-none focus:border-[#B8923F]"
+                    >
+                      <option value="7">7 Days (Short Reserve)</option>
+                      <option value="14">14 Days (Standard Campus Loan)</option>
+                      <option value="28">28 Days (Faculty Extension)</option>
+                    </select>
+                  </div>
+
+                  <div className="pt-2 flex gap-2">
+                    <button
+                      type="submit"
+                      className="flex-1 py-2 bg-[#1F3A2E] text-white text-xs font-bold rounded uppercase tracking-wider hover:bg-[#152922]"
+                    >
+                      Authorize Loan & Print Receipt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBorrowingBook(null)}
+                      className="px-4 py-2 bg-transparent border border-[#23281F]/20 text-xs rounded"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* --- MODAL 3: THERMAL DUE SLIP / LOAN RECEIPT --- */}
+          {receiptData && (
+            <div id="printable-receipt" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+              <div className="bg-[#FAF5E8] border border-[#23281F]/30 rounded-xl max-w-xs w-full p-6 shadow-2xl font-mono-code text-xs text-[#23281F] relative">
+                <button
+                  onClick={() => setReceiptData(null)}
+                  className="absolute top-3 right-3 text-[#23281F]/50 hover:text-black font-bold print:hidden"
+                >
+                  ✕
+                </button>
+                <div className="text-center pb-3 border-b-2 border-dashed border-[#23281F]/20">
+                  <div className="font-bold text-sm text-[#1F3A2E]">STACKLINE LIBRARY</div>
+                  <div className="text-[10px] text-[#23281F]/60">Official Circulation Due Slip</div>
+                  <div className="text-[9px] text-[#23281F]/40 mt-0.5">DATE: {new Date().toLocaleDateString()}</div>
+                </div>
+
+                <div className="py-3 border-b-2 border-dashed border-[#23281F]/20 space-y-1.5 text-[11px]">
+                  <div><span className="text-[#23281F]/60">BOOK:</span> <span className="font-bold">{receiptData.book.title}</span></div>
+                  <div><span className="text-[#23281F]/60">CALL:</span> {receiptData.book.call}</div>
+                  <div><span className="text-[#23281F]/60">PATRON:</span> {receiptData.patronName}</div>
+                  <div><span className="text-[#23281F]/60">CARD:</span> {receiptData.patronId}</div>
+                </div>
+
+                <div className="my-3 p-3 bg-white border-2 border-[#8C4A3B] rounded text-center">
+                  <div className="text-[9px] tracking-widest text-[#8C4A3B] uppercase font-bold">DATE DUE FOR RETURN</div>
+                  <div className="font-serif-display font-bold text-xl text-[#8C4A3B] mt-0.5">{receiptData.book.due}</div>
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <svg className="w-48 h-8" viewBox="0 0 260 40">
+                    {generateBarcodeBars(receiptData.book.isbn, 260).map((b, i) => (
+                      <rect key={i} x={b.x} y={2} width={b.width} height={36} fill="#1F3A2E" />
+                    ))}
+                  </svg>
+                  <span className="text-[9px] tracking-widest text-[#23281F]/60 mt-0.5">*{receiptData.book.isbn}*</span>
+                </div>
+
+                <div className="mt-4 flex gap-2 print:hidden">
+                  <button
+                    onClick={() => window.print()}
+                    className="flex-1 py-1.5 bg-[#1F3A2E] text-white text-xs font-bold rounded"
+                  >
+                    Print Slip
+                  </button>
+                  <button
+                    onClick={() => setReceiptData(null)}
+                    className="py-1.5 px-3 bg-transparent border border-[#23281F]/20 text-xs rounded"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* --- MODAL 4: OPTICAL BARCODE SCANNER --- */}
+          {isScannerOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
+              <div className="bg-[#1F3A2E] text-[#EFE7D3] border-2 border-[#B8923F] rounded-2xl max-w-xl w-full p-6 shadow-2xl relative">
+                <button
+                  onClick={() => setIsScannerOpen(false)}
+                  className="absolute top-4 right-4 text-white/70 hover:text-white font-bold"
+                >
+                  ✕
+                </button>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="px-2 py-0.5 bg-[#B8923F] text-[#152922] font-mono-code font-bold text-[10px] rounded">
+                    LASER SCANNER
+                  </span>
+                  <h3 className="font-serif-display font-bold text-lg text-[#FAF5E8]">
+                    Optical ISBN Barcode Station
+                  </h3>
+                </div>
+
+                {/* Viewfinder Bed */}
+                <div className="relative bg-[#152922] h-48 rounded-lg border border-white/20 flex flex-col items-center justify-center overflow-hidden mb-4 p-4 text-center">
+                  <div className="w-56 h-28 border-2 border-[#B8923F] rounded relative flex items-center justify-center">
+                    <div className="w-full h-0.5 bg-red-500 shadow-[0_0_8px_#ff0000] animate-pulse" />
+                  </div>
+                  <span className="text-xs font-mono-code text-[#B8923F] mt-2">
+                    Click any title below to simulate instant laser barcode lock
+                  </span>
+                </div>
+
+                {/* Simulated Titles Quick Tray */}
+                <div className="space-y-1">
+                  <span className="text-[11px] font-mono-code text-[#EFE7D3]/60 block mb-1">
+                    Select Book to Scan on Tray:
+                  </span>
+                  <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                    {books.slice(0, 8).map(book => (
+                      <button
+                        key={book.id}
+                        onClick={() => {
+                          playScannerSuccessBeep();
+                          setIsScannerOpen(false);
+                          setInspectingBook(book);
+                        }}
+                        className="text-left p-2 rounded bg-[#152922] hover:bg-[#28493b] border border-[#EFE7D3]/10 text-xs font-mono-code group"
+                      >
+                        <div className="font-bold truncate text-[#FAF5E8] group-hover:text-[#B8923F]">{book.title}</div>
+                        <div className="text-[10px] text-[#EFE7D3]/60">{book.isbn}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>

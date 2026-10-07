@@ -1,0 +1,8 @@
+{
+  "name": "Stackline — Smart Campus Library System",
+  "description": "An interactive campus library management and visual bookshelf catalog system with real-time checkout, circulation tracking, overdue monitoring, and catalog search.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
