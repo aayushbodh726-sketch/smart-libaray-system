@@ -1,20 +1,24 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231F3A2E'><path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20'/><path d='M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z'/></svg>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stackline — Smart Campus Library System</title>
-    <meta name="description" content="An interactive campus library management and visual bookshelf catalog system with real-time checkout, circulation tracking, overdue monitoring, and catalog search." />
-    <meta property="og:title" content="Stackline — Smart Campus Library System" />
-    <meta property="og:description" content="An interactive campus library management and visual bookshelf catalog system with real-time checkout, circulation tracking, overdue monitoring, and catalog search." />
-    <meta property="og:type" content="website" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  </head>
-  <body class="bg-[#EFE7D3] text-[#23281F] antialiased selection:bg-[#B8923F] selection:text-[#FBF6E9]">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stackline — Smart Campus Library System</title>
+  <meta http-equiv="refresh" content="0; url=./public/standalone.html" />
+</head>
+<body>
+  <p>Loading Stackline Library…</p>
+
+  <script>
+    // GitHub Pages serves the standalone file from /public/,
+    // while Vite serves public/ files from the site root.
+    const isGitHubPages = window.location.hostname.endsWith('github.io');
+
+    window.location.replace(
+      isGitHubPages
+        ? './public/standalone.html'
+        : './standalone.html'
+    );
+  </script>
+</body>
 </html>
