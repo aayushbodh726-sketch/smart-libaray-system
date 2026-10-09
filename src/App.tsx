@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Book, ViewMode, AvailabilityFilter, SortOption } from './types';
+import { Book, ViewMode, AvailabilityFilter, SortOption, WaitlistEntry } from './types';
 import { INITIAL_BOOKS } from './data/initialBooks';
-import { isOverdue, exportCatalogToCsv } from './utils/libraryUtils';
+import { isOverdue, isDueSoon, exportCatalogToCsv } from './utils/libraryUtils';
 import { Header } from './components/Header';
 import { StatsBar } from './components/StatsBar';
 import { BookshelfView } from './components/BookshelfView';
@@ -14,6 +14,8 @@ import { AddBookModal } from './components/AddBookModal';
 import { BarcodeScannerModal } from './components/BarcodeScannerModal';
 import { LibraryMap } from './components/LibraryMap';
 import { LoanReceiptModal } from './components/LoanReceiptModal';
+import { ProgrammerDatabaseModal } from './components/ProgrammerDatabaseModal';
+import { DatabaseService } from './services/databaseService';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 
 const STORAGE_KEY = 'stackline_library_books_v2';
@@ -53,6 +55,7 @@ export default function App() {
   const [borrowingBook, setBorrowingBook] = useState<Book | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isDatabaseModalOpen, setIsDatabaseModalOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
   const [targetBookLocation, setTargetBookLocation] = useState<string | null>(null);
   const [receiptData, setReceiptData] = useState<{
@@ -78,7 +81,7 @@ export default function App() {
     }, 3800);
   };
 
-  // Keyboard shortcut listener for '/' to focus search, 'b' to open scanner & 'Escape' to close modals
+  // Keyboard shortcut listener for '/' to focus search, 'b' to open scanner, 'd' for DB console & 'Escape' to close modals
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
@@ -90,12 +93,18 @@ export default function App() {
         e.preventDefault();
         setIsScannerOpen((prev) => !prev);
       }
+      if ((e.key === 'd' || e.key === 'D') && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        setIsDatabaseModalOpen((prev) => !prev);
+      }
       if (e.key === 'Escape') {
         setInspectingBook(null);
         setBorrowingBook(null);
         setIsAddModalOpen(false);
         setIsScannerOpen(false);
+        setIsDatabaseModalOpen(false);
         setEditingBook(null);
+        setReceiptData(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -110,6 +119,11 @@ export default function App() {
   // Overdue count
   const overdueCount = useMemo(() => {
     return books.filter(isOverdue).length;
+  }, [books]);
+
+  // Due Soon count (due in next 3 days)
+  const dueSoonCount = useMemo(() => {
+    return books.filter((b) => isDueSoon(b, 3)).length;
   }, [books]);
 
   // Filtered & Sorted books
@@ -136,6 +150,8 @@ export default function App() {
         matchesAvail = !book.out;
       } else if (availabilityFilter === 'out') {
         matchesAvail = book.out;
+      } else if (availabilityFilter === 'due_soon') {
+        matchesAvail = isDueSoon(book, 3);
       } else if (availabilityFilter === 'overdue') {
         matchesAvail = isOverdue(book);
       }
@@ -223,6 +239,7 @@ export default function App() {
       });
     }
     showToast(`Issued loan for "${targetBook?.title || 'Book'}" to ${patronName}.`, 'success');
+    DatabaseService.logAudit('LOAN_ISSUED', `Issued loan for "${targetBook?.title}" to ${patronName} (${patronId}).`, bookId);
   };
 
   const handleReturnBook = (bookId: number) => {
@@ -253,7 +270,69 @@ export default function App() {
         : prev
     );
 
-    showToast(`Checked in "${targetBook?.title}". Returned to shelf.`, 'success');
+    DatabaseService.logAudit('BOOK_RETURNED', `Checked in "${targetBook?.title}". Returned to shelf.`, bookId);
+
+    if (targetBook?.waitlist && targetBook.waitlist.length > 0) {
+      const next = targetBook.waitlist[0];
+      showToast(`Checked in "${targetBook.title}". Next in line: ${next.patronName} (${next.patronId})!`, 'info');
+    } else {
+      showToast(`Checked in "${targetBook?.title}". Returned to shelf.`, 'success');
+    }
+  };
+
+  const handleAddWaitlist = (bookId: number, patronName: string, patronId: string, email?: string, notes?: string) => {
+    const newEntry: WaitlistEntry = {
+      id: `wl-${Date.now()}`,
+      bookId,
+      patronName,
+      patronId,
+      patronEmail: email,
+      notes,
+      dateAdded: new Date().toISOString().split('T')[0],
+      status: 'waiting',
+    };
+
+    setBooks((prev) =>
+      prev.map((b) => {
+        if (b.id === bookId) {
+          const queue = b.waitlist ? [...b.waitlist, newEntry] : [newEntry];
+          return { ...b, waitlist: queue };
+        }
+        return b;
+      })
+    );
+
+    setInspectingBook((prev) => {
+      if (prev && prev.id === bookId) {
+        const queue = prev.waitlist ? [...prev.waitlist, newEntry] : [newEntry];
+        return { ...prev, waitlist: queue };
+      }
+      return prev;
+    });
+
+    DatabaseService.logAudit('WAITLIST_ADDED', `Added ${patronName} to waitlist queue for Book #${bookId}.`, bookId);
+    showToast(`Added ${patronName} to waitlist queue for this volume!`, 'success');
+  };
+
+  const handleRemoveWaitlist = (bookId: number, waitlistId: string) => {
+    setBooks((prev) =>
+      prev.map((b) => {
+        if (b.id === bookId && b.waitlist) {
+          return { ...b, waitlist: b.waitlist.filter((w) => w.id !== waitlistId) };
+        }
+        return b;
+      })
+    );
+
+    setInspectingBook((prev) => {
+      if (prev && prev.id === bookId && prev.waitlist) {
+        return { ...prev, waitlist: prev.waitlist.filter((w) => w.id !== waitlistId) };
+      }
+      return prev;
+    });
+
+    DatabaseService.logAudit('WAITLIST_REMOVED', `Removed waitlist entry ${waitlistId} from Book #${bookId}.`, bookId);
+    showToast(`Removed patron from waitlist.`, 'info');
   };
 
   const handleRenewLoan = (bookId: number) => {
@@ -387,7 +466,9 @@ export default function App() {
           showToast('Catalog exported to CSV file.', 'info');
         }}
         onResetCatalog={handleResetCatalog}
+        onOpenDatabaseModal={() => setIsDatabaseModalOpen(true)}
         overdueCount={overdueCount}
+        dueSoonCount={dueSoonCount}
       />
 
       {/* Main Content Area */}

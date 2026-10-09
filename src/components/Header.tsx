@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, Download, RotateCcw, Library, LayoutGrid, BookOpen, BarChart3, X, Barcode, Camera, Compass } from 'lucide-react';
+import { Search, Plus, Download, RotateCcw, Library, LayoutGrid, BookOpen, BarChart3, X, Barcode, Camera, Compass, Database, Clock } from 'lucide-react';
 import { ViewMode, AvailabilityFilter, SortOption } from '../types';
 
 interface HeaderProps {
@@ -18,7 +18,9 @@ interface HeaderProps {
   onOpenScanner: () => void;
   onExportCsv: () => void;
   onResetCatalog: () => void;
+  onOpenDatabaseModal: () => void;
   overdueCount: number;
+  dueSoonCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -37,7 +39,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenScanner,
   onExportCsv,
   onResetCatalog,
+  onOpenDatabaseModal,
   overdueCount,
+  dueSoonCount = 0,
 }) => {
   return (
     <header className="bg-[#1F3A2E] text-[#EFE7D3] pt-7 pb-10 px-4 sm:px-8 relative overflow-hidden shadow-xl border-b-4 border-[#B8923F]">
@@ -61,6 +65,15 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={onOpenDatabaseModal}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#B8923F]/20 hover:bg-[#B8923F]/35 text-[#E8C872] border border-[#B8923F]/50 font-semibold text-xs font-mono-code rounded shadow transition-all hover:scale-105"
+              title="Open Programmer / Database Console to inspect tables & patron usage"
+            >
+              <Database className="w-3.5 h-3.5 text-[#B8923F]" />
+              <span>Database Console (DB)</span>
+            </button>
+
             <button
               onClick={onOpenScanner}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#B8923F] hover:bg-[#a88233] text-[#152922] font-semibold text-xs tracking-wide uppercase rounded shadow transition-all hover:scale-105"
@@ -158,6 +171,9 @@ export const Header: React.FC<HeaderProps> = ({
               <option value="all">All Copies</option>
               <option value="avail">Available on Shelf</option>
               <option value="out">Currently Checked Out</option>
+              <option value="due_soon">
+                Due Soon (Within 3 Days) {dueSoonCount > 0 ? `(${dueSoonCount})` : ''}
+              </option>
               <option value="overdue">
                 Overdue {overdueCount > 0 ? `(${overdueCount} Alert)` : ''}
               </option>
@@ -229,7 +245,7 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               <BarChart3 className="w-3.5 h-3.5" />
-              <span>Analytics</span>
+              <span>Analytics & Goals</span>
             </button>
 
             <button
@@ -245,11 +261,17 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          <div className="font-mono-code text-xs text-[#EFE7D3]/60">
-            Press <kbd className="px-1.5 py-0.5 bg-[#152922] rounded border border-[#EFE7D3]/20 text-[#B8923F]">/</kbd> to search anytime
+          <div className="font-mono-code text-xs text-[#EFE7D3]/60 flex items-center gap-2">
+            <span>Press <kbd className="px-1.5 py-0.5 bg-[#152922] rounded border border-[#EFE7D3]/20 text-[#B8923F]">/</kbd> to search</span>
+            <span>·</span>
+            <button onClick={onOpenDatabaseModal} className="text-[#B8923F] hover:underline flex items-center gap-1">
+              <Database className="w-3 h-3" />
+              <span>DB Console</span>
+            </button>
           </div>
         </div>
       </div>
     </header>
   );
 };
+

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Book } from '../types';
-import { isOverdue, getDaysRemainingText } from '../utils/libraryUtils';
-import { Clock, RefreshCw, CheckCheck, AlertTriangle, UserCheck, Printer } from 'lucide-react';
+import { isOverdue, isDueSoon, getDaysRemainingText } from '../utils/libraryUtils';
+import { Clock, RefreshCw, CheckCheck, AlertTriangle, UserCheck, Printer, Hourglass, Users } from 'lucide-react';
 
 interface LoansTableProps {
   books: Book[];
@@ -20,6 +20,7 @@ export const LoansTable: React.FC<LoansTableProps> = ({
 }) => {
   const activeLoans = books.filter((b) => b.out);
   const overdueLoans = activeLoans.filter(isOverdue);
+  const dueSoonLoans = activeLoans.filter((b) => isDueSoon(b, 3));
 
   return (
     <div className="bg-[#FBF6E9] border border-[#23281F]/15 rounded-xl shadow-sm overflow-hidden">
@@ -132,6 +133,11 @@ export const LoansTable: React.FC<LoansTableProps> = ({
                             </span>
                           )}
                         </div>
+                      ) : isDueSoon(book, 3) ? (
+                        <span className="inline-flex items-center gap-1 font-mono-code text-[10px] px-2 py-0.5 rounded bg-[#FFF2D1] text-[#7A5A1B] border border-[#D4AF37] font-bold">
+                          <Hourglass className="w-3 h-3 text-[#B8923F] animate-spin" />
+                          DUE SOON
+                        </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 font-mono-code text-[10px] px-2 py-0.5 rounded bg-[#B8923F]/20 text-[#754C24]">
                           <Clock className="w-3 h-3" />

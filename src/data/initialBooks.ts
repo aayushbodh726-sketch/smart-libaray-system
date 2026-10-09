@@ -57,6 +57,29 @@ export const INITIAL_BOOKS: Book[] = [
     due: getRelativeDateString(2).display,
     dueDateIso: getRelativeDateString(2).iso,
     timesBorrowed: 38,
+    waitlist: [
+      {
+        id: "wl-1",
+        bookId: 2,
+        bookTitle: "Clean Code",
+        patronName: "Marcus Vance",
+        patronId: "STU-4109",
+        patronEmail: "m.vance@campus.edu",
+        dateAdded: "2026-10-04",
+        status: "waiting",
+        notes: "Needed for Software Architecture course"
+      },
+      {
+        id: "wl-2",
+        bookId: 2,
+        bookTitle: "Clean Code",
+        patronName: "Clara Oswald",
+        patronId: "STU-5520",
+        patronEmail: "clara.o@campus.edu",
+        dateAdded: "2026-10-06",
+        status: "waiting"
+      }
+    ]
   },
   {
     id: 3,
@@ -205,8 +228,25 @@ export const INITIAL_BOOKS: Book[] = [
     pages: 253,
     shelfLocation: "Stack 2A · Shelf 5",
     description: "A small practical handbook outlining heuristics for discovering solutions to mathematical, scientific, and engineering puzzles.",
-    out: false,
+    out: true,
+    borrower: "Dr. Aris Thorne (MATH-401)",
+    borrowerId: "FAC-1904",
+    borrowedDate: getRelativeDateString(-11).iso,
+    due: getRelativeDateString(3).display,
+    dueDateIso: getRelativeDateString(3).iso,
     timesBorrowed: 39,
+    waitlist: [
+      {
+        id: "wl-3",
+        bookId: 12,
+        bookTitle: "How to Solve It",
+        patronName: "Samantha Reed",
+        patronId: "STU-9201",
+        patronEmail: "s.reed@campus.edu",
+        dateAdded: "2026-10-07",
+        status: "waiting"
+      }
+    ]
   },
   {
     id: 13,

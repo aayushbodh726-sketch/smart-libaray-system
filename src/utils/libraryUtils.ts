@@ -12,6 +12,25 @@ export function isOverdue(book: Book): boolean {
   return now.getTime() > due.getTime();
 }
 
+/**
+ * Checks if a borrowed book is due within the specified threshold (default: next 3 days)
+ */
+export function isDueSoon(book: Book, daysThreshold = 3): boolean {
+  if (!book.out || !book.dueDateIso) return false;
+  if (isOverdue(book)) return false; // Overdue has its own higher-priority category
+
+  const due = new Date(book.dueDateIso);
+  const now = new Date();
+  due.setHours(0, 0, 0, 0);
+  now.setHours(0, 0, 0, 0);
+
+  const diffTime = due.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  // Between 0 (due today) and daysThreshold (e.g. 3 days)
+  return diffDays >= 0 && diffDays <= daysThreshold;
+}
+
 export function getDaysRemainingText(book: Book): { text: string; isLate: boolean; days: number } {
   if (!book.out || !book.dueDateIso) {
     return { text: 'Available', isLate: false, days: 0 };
