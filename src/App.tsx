@@ -14,6 +14,7 @@ import { AddBookModal } from './components/AddBookModal';
 import { BarcodeScannerModal } from './components/BarcodeScannerModal';
 import { LibraryMap } from './components/LibraryMap';
 import { LoanReceiptModal } from './components/LoanReceiptModal';
+import { LibrarianView } from './components/LibrarianView';
 import { ProgrammerDatabaseModal } from './components/ProgrammerDatabaseModal';
 import { DatabaseService } from './services/databaseService';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
@@ -126,6 +127,11 @@ export default function App() {
     return books.filter((b) => isDueSoon(b, 3)).length;
   }, [books]);
 
+  // New Arrivals count
+  const newArrivalsCount = useMemo(() => {
+    return books.filter((b) => b.isNewArrival).length;
+  }, [books]);
+
   // Filtered & Sorted books
   const filteredBooks = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -154,6 +160,8 @@ export default function App() {
         matchesAvail = isDueSoon(book, 3);
       } else if (availabilityFilter === 'overdue') {
         matchesAvail = isOverdue(book);
+      } else if (availabilityFilter === 'new_arrivals') {
+        matchesAvail = Boolean(book.isNewArrival);
       }
 
       return matchesSearch && matchesGenre && matchesAvail;
@@ -387,6 +395,7 @@ export default function App() {
       );
       setEditingBook(null);
       showToast(`Updated record for "${bookData.title}".`, 'info');
+      DatabaseService.logAudit('BOOK_EDITED', `Updated catalog record for "${bookData.title}".`, editingBook.id);
     } else {
       const newId = books.length ? Math.max(...books.map((b) => b.id)) + 1 : 1;
       const newBook: Book = {
@@ -400,11 +409,47 @@ export default function App() {
         pages: bookData.pages,
         isbn: bookData.isbn,
         description: bookData.description,
+        isNewArrival: bookData.isNewArrival ?? true,
+        acquiredDate: bookData.acquiredDate || new Date().toISOString().split('T')[0],
+        condition: bookData.condition || 'Mint / Brand New',
+        supplier: bookData.supplier || 'Campus Stacks Intake',
         out: false,
         timesBorrowed: 0,
       };
       setBooks((prev) => [newBook, ...prev]);
-      showToast(`Successfully cataloged "${newBook.title}".`, 'success');
+      showToast(`Successfully cataloged "${newBook.title}" into library stacks.`, 'success');
+      DatabaseService.logAudit('BOOK_ADDED', `Cataloged "${newBook.title}" by ${newBook.author} into ${newBook.shelfLocation}.`, newId);
+    }
+  };
+
+  const handleToggleNewArrival = (bookId: number) => {
+    setBooks((prev) =>
+      prev.map((b) => {
+        if (b.id === bookId) {
+          const nextState = !b.isNewArrival;
+          showToast(
+            nextState
+              ? `Marked "${b.title}" as Recent Arrival.`
+              : `Marked "${b.title}" as Processed & Shelved.`,
+            'info'
+          );
+          return { ...b, isNewArrival: nextState };
+        }
+        return b;
+      })
+    );
+    setInspectingBook((prev) =>
+      prev && prev.id === bookId ? { ...prev, isNewArrival: !prev.isNewArrival } : prev
+    );
+  };
+
+  const handleDeleteBook = (bookId: number) => {
+    const book = books.find((b) => b.id === bookId);
+    if (window.confirm(`Uncatalog "${book?.title || 'this book'}" from library inventory?`)) {
+      setBooks((prev) => prev.filter((b) => b.id !== bookId));
+      if (inspectingBook?.id === bookId) setInspectingBook(null);
+      showToast(`Removed "${book?.title}" from catalog.`, 'info');
+      DatabaseService.logAudit('BOOK_EDITED', `Uncataloged book #${bookId} (${book?.title}).`, bookId);
     }
   };
 
@@ -469,6 +514,7 @@ export default function App() {
         onOpenDatabaseModal={() => setIsDatabaseModalOpen(true)}
         overdueCount={overdueCount}
         dueSoonCount={dueSoonCount}
+        newArrivalsCount={newArrivalsCount}
       />
 
       {/* Main Content Area */}
@@ -519,6 +565,21 @@ export default function App() {
           />
         )}
 
+        {viewMode === 'librarian' && (
+          <LibrarianView
+            books={books}
+            onAddBook={handleSaveBook}
+            onEditBook={(book) => {
+              setEditingBook(book);
+              setIsAddModalOpen(true);
+            }}
+            onDeleteBook={handleDeleteBook}
+            onSelectBook={(book) => setInspectingBook(book)}
+            onToggleNewArrival={handleToggleNewArrival}
+            genres={genres}
+          />
+        )}
+
         {viewMode === 'analytics' && <AnalyticsView books={books} />}
 
         {viewMode === 'map' && (
@@ -560,6 +621,7 @@ export default function App() {
           setIsAddModalOpen(true);
         }}
         onLocateOnMap={handleLocateOnMap}
+        onToggleNewArrival={handleToggleNewArrival}
         onOpenReceipt={(book) =>
           setReceiptData({
             book,

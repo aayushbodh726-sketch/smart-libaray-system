@@ -65,10 +65,15 @@ export interface Book {
   dueDateIso?: string; // e.g. "2026-10-12"
   timesBorrowed: number;
   waitlist?: WaitlistEntry[];
+  // New Acquisition & Ingestion fields
+  isNewArrival?: boolean;
+  acquiredDate?: string; // ISO string e.g. "2026-10-12"
+  condition?: 'Mint / Brand New' | 'Near Mint' | 'Good' | 'Archival / Rare';
+  supplier?: string; // e.g. "MIT Press Fall 2026 Shipment"
 }
 
-export type ViewMode = 'shelf' | 'grid' | 'circulation' | 'analytics' | 'map' | 'database';
+export type ViewMode = 'shelf' | 'grid' | 'circulation' | 'librarian' | 'analytics' | 'map' | 'database';
 
-export type AvailabilityFilter = 'all' | 'avail' | 'out' | 'overdue' | 'due_soon';
+export type AvailabilityFilter = 'all' | 'avail' | 'out' | 'overdue' | 'due_soon' | 'new_arrivals';
 
 export type SortOption = 'title' | 'author' | 'call' | 'popularity' | 'status';

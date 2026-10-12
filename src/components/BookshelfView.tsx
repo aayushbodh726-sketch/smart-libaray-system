@@ -325,6 +325,18 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
 
                         {/* 6. Top Compartment: Headcap, Raised Gold Fillet & Author */}
                         <div className="relative z-10 w-full pt-2 px-1">
+                          {/* New Arrival Spine Indicator */}
+                          {book.isNewArrival && (
+                            <div
+                              className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-40 pointer-events-none"
+                              title="Newly arrived into library"
+                            >
+                              <div className="bg-gradient-to-r from-[#B8923F] via-[#E8C872] to-[#B8923F] text-[#152922] font-mono-code font-black text-[6.5px] px-1 py-0.2 rounded-xs shadow border border-[#152922]/50 tracking-tighter uppercase whitespace-nowrap">
+                                NEW
+                              </div>
+                            </div>
+                          )}
+
                           {/* Upper Raised Spine Rib */}
                           <div className="w-full flex flex-col gap-0.5 px-0.5 mt-0.5">
                             <div className="h-[2px] bg-[#E8C872] shadow-[0_1px_1px_rgba(0,0,0,0.7)] rounded-xs" />

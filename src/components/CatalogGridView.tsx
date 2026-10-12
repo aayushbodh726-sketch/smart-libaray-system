@@ -58,6 +58,12 @@ export const CatalogGridView: React.FC<CatalogGridViewProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
+                    {book.isNewArrival && (
+                      <span className="font-mono-code text-[10px] text-[#152922] bg-[#E8C872] px-1.5 py-0.5 rounded font-black border border-[#B8923F] uppercase flex items-center gap-0.5 shadow-xs">
+                        <span>✦</span>
+                        <span>New</span>
+                      </span>
+                    )}
                     {book.waitlist && book.waitlist.length > 0 && (
                       <span className="font-mono-code text-[11px] text-[#754C24] bg-[#B8923F]/20 px-1.5 py-0.5 rounded flex items-center gap-1 font-bold">
                         <Users className="w-3 h-3 text-[#B8923F]" />

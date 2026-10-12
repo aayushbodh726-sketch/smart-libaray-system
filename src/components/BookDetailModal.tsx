@@ -3,10 +3,11 @@ import { Book, WaitlistEntry } from '../types';
 import { isOverdue, isDueSoon, getDaysRemainingText } from '../utils/libraryUtils';
 import { generateBarcodeBars } from '../utils/barcodeGenerator';
 import { BookCover3D } from './BookCover3D';
+import { SpineLabelModal } from './SpineLabelModal';
 import {
   X, Calendar, User, MapPin, Hash, BookMarked, RefreshCw, CheckCheck,
   Printer, Edit2, AlertCircle, Barcode, Compass, Users, UserPlus, Clock,
-  Trash2, Mail, CheckCircle2, AlertTriangle
+  Trash2, Mail, CheckCircle2, AlertTriangle, Tag, Sparkles
 } from 'lucide-react';
 
 interface BookDetailModalProps {
@@ -20,6 +21,7 @@ interface BookDetailModalProps {
   onOpenReceipt?: (book: Book) => void;
   onAddWaitlist?: (bookId: number, patronName: string, patronId: string, email?: string, notes?: string) => void;
   onRemoveWaitlist?: (bookId: number, waitlistId: string) => void;
+  onToggleNewArrival?: (bookId: number) => void;
 }
 
 export const BookDetailModal: React.FC<BookDetailModalProps> = ({
@@ -33,12 +35,16 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
   onOpenReceipt,
   onAddWaitlist,
   onRemoveWaitlist,
+  onToggleNewArrival,
 }) => {
   if (!book) return null;
 
   const overdue = isOverdue(book);
   const dueSoon = isDueSoon(book, 3);
   const remaining = getDaysRemainingText(book);
+
+  // Spine Label Modal state
+  const [isSpineModalOpen, setIsSpineModalOpen] = useState(false);
 
   // Waitlist form state
   const [isAddingWaitlist, setIsAddingWaitlist] = useState(false);
@@ -105,6 +111,12 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
                   Pub. {book.year}
                 </span>
               )}
+              {book.isNewArrival && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono-code font-bold text-[#152922] bg-[#E8C872] px-2 py-0.5 rounded border border-[#B8923F] shadow-xs">
+                  <span>✦</span>
+                  <span>NEW ARRIVAL</span>
+                </span>
+              )}
               {dueSoon && (
                 <span className="inline-flex items-center gap-1 text-[11px] font-mono-code font-bold text-[#8C4A3B] bg-[#E8C872]/30 px-2 py-0.5 rounded border border-[#B8923F]">
                   <Clock className="w-3 h-3 text-[#B8923F]" />
@@ -166,6 +178,22 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
             <div className="flex justify-between items-center py-1 border-b border-[#23281F]/10">
               <span className="text-[#23281F]/70 font-mono-code">Volume Extent:</span>
               <span className="font-mono-code text-[#23281F]">{book.pages} pages</span>
+            </div>
+          )}
+
+          {book.condition && (
+            <div className="flex justify-between items-center py-1 border-b border-[#23281F]/10">
+              <span className="text-[#23281F]/70 font-mono-code">Physical Condition:</span>
+              <span className="font-mono-code text-[#4C7A5D] font-bold">{book.condition}</span>
+            </div>
+          )}
+
+          {(book.supplier || book.acquiredDate) && (
+            <div className="flex justify-between items-center py-1 border-b border-[#23281F]/10">
+              <span className="text-[#23281F]/70 font-mono-code">Acquisition Details:</span>
+              <span className="font-mono-code text-[#754C24]">
+                {book.supplier ? book.supplier : 'Campus Intake'}{book.acquiredDate ? ` · Arrived ${book.acquiredDate}` : ''}
+              </span>
             </div>
           )}
 
@@ -417,7 +445,54 @@ export const BookDetailModal: React.FC<BookDetailModalProps> = ({
             </button>
           )}
         </div>
+
+        {/* Librarian Tools & Physical Label Bar */}
+        <div className="mt-3 pt-3 border-t border-[#23281F]/15 flex flex-wrap items-center justify-between gap-2 text-xs font-mono-code">
+          <button
+            type="button"
+            onClick={() => setIsSpineModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#FAF5E8] hover:bg-[#EFE7D3] text-[#1F3A2E] border border-[#23281F]/20 text-[11px] font-semibold transition-colors"
+            title="Print physical adhesive spine call tag and barcode sticker"
+          >
+            <Printer className="w-3.5 h-3.5 text-[#B8923F]" />
+            <span>Print Physical Spine Tag & Barcode</span>
+          </button>
+
+          <div className="flex items-center gap-2">
+            {onToggleNewArrival && (
+              <button
+                type="button"
+                onClick={() => onToggleNewArrival(book.id)}
+                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded border text-[11px] font-bold transition-colors ${
+                  book.isNewArrival
+                    ? 'bg-[#E8C872]/40 text-[#754C24] border-[#B8923F]'
+                    : 'bg-[#FAF5E8] text-[#1F3A2E] border-[#23281F]/20 hover:bg-[#EFE7D3]'
+                }`}
+                title={book.isNewArrival ? 'Remove New Arrival tag' : 'Mark as recently arrived book'}
+              >
+                <Sparkles className="w-3 h-3 text-[#B8923F]" />
+                <span>{book.isNewArrival ? 'Mark as Shelved' : 'Tag as New Arrival'}</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => onEditBook(book)}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-[#FAF5E8] hover:bg-[#EFE7D3] text-[#1F3A2E] border border-[#23281F]/20 text-[11px] font-semibold transition-colors"
+            >
+              <Edit2 className="w-3 h-3 text-[#B8923F]" />
+              <span>Edit Record</span>
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Physical Spine Label & Barcode Sticker Modal */}
+      <SpineLabelModal
+        book={book}
+        isOpen={isSpineModalOpen}
+        onClose={() => setIsSpineModalOpen(false)}
+      />
     </div>
   );
 };

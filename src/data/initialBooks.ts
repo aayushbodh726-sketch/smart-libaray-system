@@ -336,6 +336,10 @@ export const INITIAL_BOOKS: Book[] = [
     description: "Essential primer on cognitive engineering, affordances, signifiers, and human-centered design in physical and digital products.",
     out: false,
     timesBorrowed: 44,
+    isNewArrival: true,
+    acquiredDate: getRelativeDateString(-1).iso,
+    condition: "Mint / Brand New",
+    supplier: "Campus Bookstore Fall Influx",
   },
   {
     id: 19,

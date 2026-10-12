@@ -28,6 +28,11 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
   const [year, setYear] = useState(editingBook?.year ? String(editingBook.year) : '2024');
   const [pages, setPages] = useState(editingBook?.pages ? String(editingBook.pages) : '320');
   const [isbn, setIsbn] = useState(editingBook?.isbn || '');
+  const [condition, setCondition] = useState<'Mint / Brand New' | 'Near Mint' | 'Good' | 'Archival / Rare'>(
+    editingBook?.condition || 'Mint / Brand New'
+  );
+  const [supplier, setSupplier] = useState(editingBook?.supplier || 'Campus Intake');
+  const [isNewArrival, setIsNewArrival] = useState(editingBook?.isNewArrival ?? true);
   const [description, setDescription] = useState(editingBook?.description || '');
 
   // Auto-suggest call number if empty
@@ -55,6 +60,10 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
       year: year ? parseInt(year, 10) : undefined,
       pages: pages ? parseInt(pages, 10) : undefined,
       isbn: isbn.trim() || undefined,
+      condition,
+      supplier: supplier.trim(),
+      isNewArrival,
+      acquiredDate: editingBook?.acquiredDate || new Date().toISOString().split('T')[0],
       description: description.trim() || undefined,
     });
     onClose();
@@ -199,6 +208,50 @@ export const AddBookModal: React.FC<AddBookModalProps> = ({
               placeholder="978-0465026562"
               className="w-full px-3 py-2 bg-white border border-[#23281F]/20 rounded text-xs font-mono-code focus:outline-none focus:border-[#B8923F]"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block font-mono-code text-[#1F3A2E] font-semibold mb-1">
+                Physical Condition
+              </label>
+              <select
+                value={condition}
+                onChange={(e) => setCondition(e.target.value as any)}
+                className="w-full px-3 py-2 bg-white border border-[#23281F]/20 rounded text-xs focus:outline-none focus:border-[#B8923F]"
+              >
+                <option value="Mint / Brand New">Mint / Brand New</option>
+                <option value="Near Mint">Near Mint</option>
+                <option value="Good">Good</option>
+                <option value="Archival / Rare">Archival / Rare</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block font-mono-code text-[#1F3A2E] font-semibold mb-1">
+                Acquisition Supplier / Batch
+              </label>
+              <input
+                type="text"
+                value={supplier}
+                onChange={(e) => setSupplier(e.target.value)}
+                placeholder="Campus Stacks Intake"
+                className="w-full px-3 py-2 bg-white border border-[#23281F]/20 rounded text-xs focus:outline-none focus:border-[#B8923F]"
+              />
+            </div>
+          </div>
+
+          <div className="bg-[#FAF4E6] p-2.5 rounded border border-[#B8923F]/30 flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="modal-new-arrival"
+              checked={isNewArrival}
+              onChange={(e) => setIsNewArrival(e.target.checked)}
+              className="w-4 h-4 text-[#1F3A2E] rounded border-[#23281F]/30 focus:ring-[#B8923F]"
+            />
+            <label htmlFor="modal-new-arrival" className="font-mono-code text-xs text-[#1F3A2E] cursor-pointer">
+              Mark as "Recently Arrived" Volume in Stacks (displays gold ribbon)
+            </label>
           </div>
 
           <div>

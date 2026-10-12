@@ -172,6 +172,19 @@ export const BookCover3D: React.FC<BookCover3DProps> = ({
             <span className="absolute bottom-0.5 right-0.5 text-[8px] text-[#E8C872] leading-none select-none">❖</span>
           </div>
 
+          {/* New Arrival Golden Archival Ribbon */}
+          {book.isNewArrival && (
+            <div
+              className="absolute -top-1.5 -right-1.5 z-40 pointer-events-none"
+              title="Newly cataloged arrival"
+            >
+              <div className="bg-gradient-to-r from-[#B8923F] via-[#E8C872] to-[#B8923F] text-[#152922] font-mono-code font-black text-[7.5px] uppercase tracking-wider px-2 py-0.5 rounded-full shadow-md border border-[#152922]/40 flex items-center gap-0.5">
+                <span>✦</span>
+                <span>NEW</span>
+              </div>
+            </div>
+          )}
+
           {/* Book Header: Genre Tag & Call Class */}
           <div
             className="relative z-10 flex items-center justify-between gap-1 overflow-hidden"

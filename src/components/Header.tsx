@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, Download, RotateCcw, Library, LayoutGrid, BookOpen, BarChart3, X, Barcode, Camera, Compass, Database, Clock } from 'lucide-react';
+import { Search, Plus, Download, RotateCcw, Library, LayoutGrid, BookOpen, BarChart3, X, Barcode, Camera, Compass, Database, Clock, BookPlus, Sparkles } from 'lucide-react';
 import { ViewMode, AvailabilityFilter, SortOption } from '../types';
 
 interface HeaderProps {
@@ -21,6 +21,7 @@ interface HeaderProps {
   onOpenDatabaseModal: () => void;
   overdueCount: number;
   dueSoonCount?: number;
+  newArrivalsCount?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -42,6 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenDatabaseModal,
   overdueCount,
   dueSoonCount = 0,
+  newArrivalsCount = 0,
 }) => {
   return (
     <header className="bg-[#1F3A2E] text-[#EFE7D3] pt-7 pb-10 px-4 sm:px-8 relative overflow-hidden shadow-xl border-b-4 border-[#B8923F]">
@@ -169,6 +171,9 @@ export const Header: React.FC<HeaderProps> = ({
               className="bg-[#E4D9BE]/60 hover:bg-[#E4D9BE] border border-transparent focus:border-[#B8923F] rounded-lg px-3 py-2 text-xs font-medium text-[#23281F] focus:outline-none cursor-pointer flex-1 sm:flex-initial"
             >
               <option value="all">All Copies</option>
+              <option value="new_arrivals">
+                ✦ New Arrivals {newArrivalsCount > 0 ? `(${newArrivalsCount})` : ''}
+              </option>
               <option value="avail">Available on Shelf</option>
               <option value="out">Currently Checked Out</option>
               <option value="due_soon">
@@ -233,6 +238,24 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Circulation Ledger</span>
               {overdueCount > 0 && (
                 <span className="w-2 h-2 rounded-full bg-[#8C4A3B] ml-1"></span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setViewMode('librarian')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono-code rounded transition-all relative ${
+                viewMode === 'librarian'
+                  ? 'bg-[#B8923F] text-[#152922] font-semibold shadow'
+                  : 'text-[#EFE7D3]/80 hover:text-[#EFE7D3]'
+              }`}
+              title="Librarian Desk: Catalog new arrivals, intake shipments & print spine labels"
+            >
+              <BookPlus className="w-3.5 h-3.5" />
+              <span>Librarian Desk</span>
+              {newArrivalsCount > 0 && (
+                <span className="bg-[#E8C872] text-[#152922] text-[9.5px] px-1.5 py-0.2 rounded-full font-bold ml-0.5">
+                  {newArrivalsCount}
+                </span>
               )}
             </button>
 
