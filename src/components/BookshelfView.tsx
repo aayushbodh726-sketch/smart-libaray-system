@@ -123,87 +123,83 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
         </div>
       </div>
 
-      {/* Floating Active Book Inspection Card Banner */}
-      <div className="min-h-24 bg-[#FBF6E9] border-2 border-[#B8923F]/60 rounded-xl p-3 sm:p-4 flex items-center justify-between shadow-md transition-all">
+      {/* Fixed-Height Zero-Layout-Shift Active Book Inspection Banner */}
+      <div className="h-[84px] bg-[#FBF6E9] border-2 border-[#B8923F]/60 rounded-xl px-4 py-2 flex items-center shadow-md transition-colors overflow-hidden">
         {hoveredBook ? (
-          <div className="flex items-center gap-4 w-full animate-in fade-in duration-150">
-            {/* 3D Mini Book Cover Preview */}
-            <div className="shrink-0 hidden sm:block">
-              <BookCover3D book={hoveredBook} size="sm" />
-            </div>
-
-            {/* Mobile Spine Color Chip fallback */}
+          <div className="flex items-center gap-3.5 w-full">
+            {/* Compact Spine Color Chip */}
             <div
-              className="w-4 h-14 rounded-sm shadow-md border border-black/30 shrink-0 sm:hidden"
+              className="w-3.5 h-12 rounded-xs shadow-md border border-black/40 shrink-0"
               style={{
                 backgroundColor: GENRE_COLORS[hoveredBook.genre] || '#2E4A62',
-                backgroundImage: 'linear-gradient(90deg, rgba(0,0,0,0.3) 0%, rgba(255,255,255,0.2) 50%, rgba(0,0,0,0.4) 100%)',
+                backgroundImage:
+                  'linear-gradient(90deg, rgba(0,0,0,0.35) 0%, rgba(255,255,255,0.25) 50%, rgba(0,0,0,0.35) 100%)',
               }}
             />
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <span className="font-serif-display font-bold text-base sm:text-lg text-[#1F3A2E] truncate">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-serif-display font-bold text-sm sm:text-base text-[#1F3A2E] truncate">
                   {hoveredBook.title}
                 </span>
-                <span className="font-mono-code text-xs text-[#8C4A3B] px-2 py-0.5 bg-[#8C4A3B]/10 rounded border border-[#8C4A3B]/20 font-bold shrink-0">
+                <span className="font-mono-code text-[11px] text-[#8C4A3B] px-1.5 py-0.2 bg-[#8C4A3B]/10 rounded border border-[#8C4A3B]/20 font-bold shrink-0">
                   {hoveredBook.call}
                 </span>
+                {hoveredBook.isNewArrival && (
+                  <span className="font-mono-code text-[9.5px] font-black text-[#152922] bg-[#E8C872] px-1.5 py-0.2 rounded border border-[#B8923F] shrink-0">
+                    ✦ NEW
+                  </span>
+                )}
                 {hoveredBook.waitlist && hoveredBook.waitlist.length > 0 && (
-                  <span className="font-mono-code text-[11px] text-[#754C24] px-2 py-0.5 bg-[#B8923F]/15 rounded border border-[#B8923F]/30 font-bold shrink-0">
+                  <span className="font-mono-code text-[10px] text-[#754C24] px-1.5 py-0.2 bg-[#B8923F]/15 rounded border border-[#B8923F]/30 font-bold shrink-0">
                     {hoveredBook.waitlist.length} on waitlist
                   </span>
                 )}
               </div>
-              <div className="text-xs text-[#23281F]/70 truncate mt-1">
-                by <span className="font-semibold text-[#1F3A2E]">{hoveredBook.author}</span> · {hoveredBook.genre} · {hoveredBook.pages ? `${hoveredBook.pages} pages · ` : ''}{hoveredBook.shelfLocation || 'Main Stack'}
+              <div className="text-[11px] text-[#23281F]/70 truncate mt-0.5">
+                by <span className="font-semibold text-[#1F3A2E]">{hoveredBook.author}</span> · {hoveredBook.genre} · {hoveredBook.shelfLocation || 'Main Stacks'}
               </div>
-              {hoveredBook.description && (
-                <p className="text-[11px] text-[#23281F]/60 line-clamp-1 mt-1 hidden md:block">
-                  {hoveredBook.description}
-                </p>
-              )}
             </div>
 
-            <div className="shrink-0 text-right flex flex-col items-end gap-1.5">
+            <div className="shrink-0 text-right flex flex-col items-end gap-1">
               {hoveredBook.out ? (
                 isOverdue(hoveredBook) ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-mono-code text-white font-bold bg-[#8C4A3B] px-2.5 py-1 rounded shadow-xs">
-                    <AlertCircle className="w-3.5 h-3.5" />
+                  <span className="inline-flex items-center gap-1 text-[11px] font-mono-code text-white font-bold bg-[#8C4A3B] px-2 py-0.5 rounded shadow-xs">
+                    <AlertCircle className="w-3 h-3" />
                     <span>OVERDUE ({hoveredBook.due})</span>
                   </span>
                 ) : isDueSoon(hoveredBook, 3) ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-mono-code text-[#7A5A1B] font-bold bg-[#FFF2D1] border border-[#D4AF37] px-2.5 py-1 rounded shadow-xs">
-                    <Hourglass className="w-3.5 h-3.5 text-[#B8923F] animate-spin" />
+                  <span className="inline-flex items-center gap-1 text-[11px] font-mono-code text-[#7A5A1B] font-bold bg-[#FFF2D1] border border-[#D4AF37] px-2 py-0.5 rounded shadow-xs">
+                    <Hourglass className="w-3 h-3 text-[#B8923F]" />
                     <span>DUE SOON ({hoveredBook.due})</span>
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 text-xs font-mono-code text-[#152922] font-bold bg-[#B8923F] px-2.5 py-1 rounded shadow-xs">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>LOAN DUE {hoveredBook.due}</span>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-mono-code text-[#152922] font-bold bg-[#B8923F] px-2 py-0.5 rounded shadow-xs">
+                    <Clock className="w-3 h-3" />
+                    <span>DUE {hoveredBook.due}</span>
                   </span>
                 )
               ) : (
-                <span className="inline-flex items-center gap-1 text-xs font-mono-code text-white font-bold bg-[#4C7A5D] px-2.5 py-1 rounded shadow-xs">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>ON SHELF · AVAILABLE</span>
+                <span className="inline-flex items-center gap-1 text-[11px] font-mono-code text-white font-bold bg-[#4C7A5D] px-2 py-0.5 rounded shadow-xs">
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>ON SHELF</span>
                 </span>
               )}
 
               <button
                 onClick={() => onSelectBook(hoveredBook)}
-                className="inline-flex items-center gap-1 text-xs font-medium text-[#1F3A2E] hover:text-[#B8923F] transition-colors mt-0.5"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1F3A2E] hover:text-[#B8923F] transition-colors"
               >
                 <span>Pull volume from shelf</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
+                <ArrowUpRight className="w-3 h-3" />
               </button>
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-xs font-mono-code text-[#23281F]/70 py-2">
+          <div className="flex items-center gap-2 text-xs font-mono-code text-[#23281F]/70 w-full">
             <Info className="w-4 h-4 text-[#B8923F] shrink-0" />
             <span>
-              Hover over any volume to inspect gold spine calligraphy, classification tag, and physical volume · Click any book to pull it from the shelf
+              Hover over any volume to inspect spine calligraphy, classification tag & live circulation status · Click to pull from shelf
             </span>
           </div>
         )}
@@ -267,15 +263,22 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                         style={{
                           width: `${width}px`,
                           height: `${height}px`,
-                          transform: isHovered
-                            ? `translateY(-26px) scale(1.025)`
-                            : `rotate(${tilt}deg)`,
-                          transformOrigin: 'bottom center',
                         }}
-                        className={`relative rounded-t-sm cursor-pointer transition-all duration-200 group/spine flex flex-col justify-between overflow-hidden shadow-[0_8px_16px_rgba(0,0,0,0.5)] hover:shadow-[0_24px_34px_rgba(0,0,0,0.7)] ${
-                          book.out ? 'opacity-95' : 'opacity-100'
-                        }`}
+                        className="relative cursor-pointer select-none shrink-0"
                       >
+                        {/* Inner visual spine that lifts smoothly without moving the cursor hitbox */}
+                        <div
+                          style={{
+                            transform: isHovered
+                              ? 'translateY(-18px) scale(1.02)'
+                              : `rotate(${tilt}deg)`,
+                            transformOrigin: 'bottom center',
+                            transition: 'transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.18s ease',
+                          }}
+                          className={`w-full h-full relative rounded-t-sm flex flex-col justify-between overflow-hidden shadow-[0_8px_16px_rgba(0,0,0,0.5)] ${
+                            isHovered ? 'shadow-[0_22px_32px_rgba(0,0,0,0.7)] z-30' : ''
+                          } ${book.out ? 'opacity-95' : 'opacity-100'}`}
+                        >
                         {/* 1. Top Headband (Woven textile binding peeking at head of book) */}
                         <div
                           className="absolute top-0 left-1 right-1 h-1 z-30 pointer-events-none rounded-t-xs opacity-90"
@@ -459,7 +462,8 @@ export const BookshelfView: React.FC<BookshelfViewProps> = ({
                           </div>
                         )}
                       </div>
-                    );
+                    </div>
+                  );
                   })}
                 </div>
               </div>

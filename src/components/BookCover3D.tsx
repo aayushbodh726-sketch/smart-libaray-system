@@ -72,8 +72,8 @@ export const BookCover3D: React.FC<BookCover3DProps> = ({
     >
       {/* 3D Book Container with subtle perspective angle */}
       <div
-        className={`relative w-full h-full transition-transform duration-300 ease-out origin-left ${
-          interactive ? 'group-hover:-rotate-y-6 group-hover:scale-105' : ''
+        className={`relative w-full h-full pointer-events-none transition-transform duration-250 ease-out origin-left ${
+          interactive ? 'group-hover:-rotate-y-6 group-hover:scale-102' : ''
         }`}
         style={{
           transformStyle: 'preserve-3d',
